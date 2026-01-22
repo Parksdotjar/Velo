@@ -1,0 +1,56 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VELO | Log in</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-auth="logged-out">
+  <nav class="navbar">
+    <div class="nav-section">
+      <a class="brand" href="index.html">
+        <svg class="icon"><use href="sprite.svg#icon-v"></use></svg>
+        <span>VELO</span>
+      </a>
+    </div>
+    <div class="nav-section">
+      <a class="nav-button" href="index.html">Explore</a>
+      <a class="nav-button" href="upload.html">Upload</a>
+    </div>
+    <div class="nav-section">
+      <a class="nav-button guest-only" href="login.html">Log in</a>
+      <a class="nav-button guest-only" href="signup.html">Sign up</a>
+    </div>
+  </nav>
+
+  <main class="page">
+    <div class="container" style="max-width: 520px;">
+      <section class="hero">
+        <div>
+          <h1>Log in</h1>
+          <p>Access your dashboard and private clips.</p>
+        </div>
+      </section>
+
+      <section class="panel" style="padding: 24px;">
+        <div class="form-section">
+          <div class="form-group">
+            <label>Email</label>
+            <input class="input" placeholder="you@velo.com" />
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input class="input" type="password" placeholder="••••••••" />
+          </div>
+          <button class="button-primary">Log in</button>
+          <button class="button-secondary">Use magic link</button>
+          <div class="footer-note">No account yet? <a href="signup.html">Sign up</a></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

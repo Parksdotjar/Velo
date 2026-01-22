@@ -1,0 +1,70 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VELO | Clip</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-auth="logged-out">
+  <nav class="navbar">
+    <div class="nav-section">
+      <a class="brand" href="index.html">
+        <svg class="icon"><use href="sprite.svg#icon-v"></use></svg>
+        <span>VELO</span>
+      </a>
+    </div>
+    <div class="nav-section">
+      <a class="nav-button" href="index.html">Explore</a>
+      <a class="nav-button" href="upload.html">Upload</a>
+      <a class="nav-button auth-only" href="dashboard.html">Dashboard</a>
+    </div>
+    <div class="nav-section">
+      <a class="nav-button guest-only" href="login.html">Log in</a>
+      <a class="nav-button guest-only" href="signup.html">Sign up</a>
+      <a class="icon-button auth-only" href="profile.html" aria-label="Profile">
+        <svg class="icon"><use href="sprite.svg#icon-user"></use></svg>
+      </a>
+      <a class="icon-button auth-only" href="settings.html" aria-label="Settings">
+        <svg class="icon"><use href="sprite.svg#icon-settings"></use></svg>
+      </a>
+    </div>
+  </nav>
+
+  <main class="page">
+    <div class="container">
+      <section class="hero">
+        <div>
+          <h1>Clip Share</h1>
+          <p>Clean embed view for public or unlisted clips.</p>
+        </div>
+        <button class="button-secondary">Copy Link</button>
+      </section>
+
+      <section class="panel" style="padding: 20px;">
+        <div class="player" style="min-height: 420px;">Embedded Clip Player</div>
+        <div class="tag-row" style="margin-top: 16px; justify-content: space-between;">
+          <div>
+            <strong>Midnight Drift</strong>
+            <div class="footer-note">@nova • 2.1k followers</div>
+          </div>
+          <div class="tag-row">
+            <button class="button-secondary">Like</button>
+            <button class="button-secondary">Save</button>
+            <button class="button-secondary">Download</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Embed Code</h2>
+        <div class="panel" style="padding: 12px; font-size: 12px; color: var(--text-secondary);">
+          &lt;iframe src="velo.com/clip/abcd1234" width="640" height="360" frameborder="0"&gt;&lt;/iframe&gt;
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

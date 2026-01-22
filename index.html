@@ -1,0 +1,302 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VELO | Explore</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-auth="logged-out">
+  <nav class="navbar">
+    <div class="nav-section">
+      <a class="brand" href="index.html">
+        <svg class="icon"><use href="sprite.svg#icon-v"></use></svg>
+        <span>VELO</span>
+      </a>
+    </div>
+    <div class="nav-section">
+      <a class="nav-button" href="index.html">Explore</a>
+      <a class="nav-button" href="upload.html">Upload</a>
+      <a class="nav-button auth-only" href="dashboard.html">Dashboard</a>
+    </div>
+    <div class="nav-section">
+      <a class="nav-button guest-only" href="login.html">Log in</a>
+      <a class="nav-button guest-only" href="signup.html">Sign up</a>
+      <a class="icon-button auth-only" href="profile.html" aria-label="Profile">
+        <svg class="icon"><use href="sprite.svg#icon-user"></use></svg>
+      </a>
+      <a class="icon-button auth-only" href="settings.html" aria-label="Settings">
+        <svg class="icon"><use href="sprite.svg#icon-settings"></use></svg>
+      </a>
+    </div>
+  </nav>
+
+  <main class="page">
+    <div class="container">
+      <section class="hero">
+        <div>
+          <h1>Explore</h1>
+          <p>Every public clip on VELO.</p>
+        </div>
+        <div class="panel" style="padding: 10px 14px;">
+          <span class="kbd">/</span> Focus search
+          <span class="kbd" style="margin-left: 8px;">U</span> Upload
+          <span class="kbd" style="margin-left: 8px;">D</span> Dashboard
+          <span class="kbd" style="margin-left: 8px;">Esc</span> Close
+        </div>
+      </section>
+
+      <div class="search-row">
+        <input class="input" placeholder="Search titles or tags..." data-search />
+        <button class="button-secondary filter-button">
+          <svg class="icon"><use href="sprite.svg#icon-filter"></use></svg>
+          More Filters
+        </button>
+      </div>
+
+      <div class="chip-row">
+        <button class="chip active">New</button>
+        <button class="chip">Trending</button>
+        <button class="chip">Most Viewed</button>
+        <button class="chip">Most Liked</button>
+        <button class="chip">&lt;10s</button>
+        <button class="chip">10-30s</button>
+        <button class="chip">30-60s</button>
+        <button class="chip">60s+</button>
+        <button class="chip">#montage</button>
+        <button class="chip">#tutorial</button>
+        <button class="chip">#highlight</button>
+        <button class="chip">#cinematic</button>
+      </div>
+
+      <section class="grid cols-3">
+        <article class="clip-card" data-open-modal>
+          <div class="clip-thumb">
+            <div class="thumb-overlay">00:18</div>
+          </div>
+          <div class="clip-meta">
+            <h3>Midnight Drift</h3>
+            <span>@nova • 2h ago</span>
+          </div>
+          <div class="tag-row">
+            <span class="tag">#montage</span>
+            <span class="tag">#cinematic</span>
+          </div>
+          <div class="quick-actions">
+            <div class="tag-row">
+              <button class="icon-button" aria-label="Like">
+                <svg class="icon"><use href="sprite.svg#icon-heart"></use></svg>
+              </button>
+              <button class="icon-button" aria-label="Save">
+                <svg class="icon"><use href="sprite.svg#icon-bookmark"></use></svg>
+              </button>
+              <button class="icon-button" aria-label="Share">
+                <svg class="icon"><use href="sprite.svg#icon-share"></use></svg>
+              </button>
+            </div>
+            <button class="icon-button" aria-label="More">
+              <svg class="icon"><use href="sprite.svg#icon-more"></use></svg>
+            </button>
+          </div>
+        </article>
+
+        <article class="clip-card" data-open-modal>
+          <div class="clip-thumb">
+            <div class="thumb-overlay">00:42</div>
+          </div>
+          <div class="clip-meta">
+            <h3>Steel Skyline</h3>
+            <span>@flint • 6h ago</span>
+          </div>
+          <div class="tag-row">
+            <span class="tag">#urban</span>
+            <span class="tag">#timelapse</span>
+          </div>
+          <div class="quick-actions">
+            <div class="tag-row">
+              <button class="icon-button" aria-label="Like">
+                <svg class="icon"><use href="sprite.svg#icon-heart"></use></svg>
+              </button>
+              <button class="icon-button" aria-label="Save">
+                <svg class="icon"><use href="sprite.svg#icon-bookmark"></use></svg>
+              </button>
+              <button class="icon-button" aria-label="Share">
+                <svg class="icon"><use href="sprite.svg#icon-share"></use></svg>
+              </button>
+            </div>
+            <button class="icon-button" aria-label="More">
+              <svg class="icon"><use href="sprite.svg#icon-more"></use></svg>
+            </button>
+          </div>
+        </article>
+
+        <article class="clip-card" data-open-modal>
+          <div class="clip-thumb">
+            <div class="thumb-overlay">01:06</div>
+          </div>
+          <div class="clip-meta">
+            <h3>One-Take Rally</h3>
+            <span>@pilot • 1d ago</span>
+          </div>
+          <div class="tag-row">
+            <span class="tag">#highlight</span>
+            <span class="tag">#action</span>
+          </div>
+          <div class="quick-actions">
+            <div class="tag-row">
+              <button class="icon-button" aria-label="Like">
+                <svg class="icon"><use href="sprite.svg#icon-heart"></use></svg>
+              </button>
+              <button class="icon-button" aria-label="Save">
+                <svg class="icon"><use href="sprite.svg#icon-bookmark"></use></svg>
+              </button>
+              <button class="icon-button" aria-label="Share">
+                <svg class="icon"><use href="sprite.svg#icon-share"></use></svg>
+              </button>
+            </div>
+            <button class="icon-button" aria-label="More">
+              <svg class="icon"><use href="sprite.svg#icon-more"></use></svg>
+            </button>
+          </div>
+        </article>
+
+        <article class="clip-card" data-open-modal>
+          <div class="clip-thumb">
+            <div class="thumb-overlay">00:09</div>
+          </div>
+          <div class="clip-meta">
+            <h3>Macro Pulse</h3>
+            <span>@lumen • 2d ago</span>
+          </div>
+          <div class="tag-row">
+            <span class="tag">#detail</span>
+            <span class="tag">#slowmo</span>
+          </div>
+          <div class="quick-actions">
+            <div class="tag-row">
+              <button class="icon-button" aria-label="Like">
+                <svg class="icon"><use href="sprite.svg#icon-heart"></use></svg>
+              </button>
+              <button class="icon-button" aria-label="Save">
+                <svg class="icon"><use href="sprite.svg#icon-bookmark"></use></svg>
+              </button>
+              <button class="icon-button" aria-label="Share">
+                <svg class="icon"><use href="sprite.svg#icon-share"></use></svg>
+              </button>
+            </div>
+            <button class="icon-button" aria-label="More">
+              <svg class="icon"><use href="sprite.svg#icon-more"></use></svg>
+            </button>
+          </div>
+        </article>
+
+        <article class="clip-card" data-open-modal>
+          <div class="clip-thumb">
+            <div class="thumb-overlay">00:26</div>
+          </div>
+          <div class="clip-meta">
+            <h3>Glass Runner</h3>
+            <span>@stride • 3d ago</span>
+          </div>
+          <div class="tag-row">
+            <span class="tag">#tutorial</span>
+            <span class="tag">#lighting</span>
+          </div>
+          <div class="quick-actions">
+            <div class="tag-row">
+              <button class="icon-button" aria-label="Like">
+                <svg class="icon"><use href="sprite.svg#icon-heart"></use></svg>
+              </button>
+              <button class="icon-button" aria-label="Save">
+                <svg class="icon"><use href="sprite.svg#icon-bookmark"></use></svg>
+              </button>
+              <button class="icon-button" aria-label="Share">
+                <svg class="icon"><use href="sprite.svg#icon-share"></use></svg>
+              </button>
+            </div>
+            <button class="icon-button" aria-label="More">
+              <svg class="icon"><use href="sprite.svg#icon-more"></use></svg>
+            </button>
+          </div>
+        </article>
+
+        <article class="clip-card" data-open-modal>
+          <div class="clip-thumb">
+            <div class="thumb-overlay">00:31</div>
+          </div>
+          <div class="clip-meta">
+            <h3>Subzero Lines</h3>
+            <span>@drift • 1w ago</span>
+          </div>
+          <div class="tag-row">
+            <span class="tag">#snow</span>
+            <span class="tag">#slowmo</span>
+          </div>
+          <div class="quick-actions">
+            <div class="tag-row">
+              <button class="icon-button" aria-label="Like">
+                <svg class="icon"><use href="sprite.svg#icon-heart"></use></svg>
+              </button>
+              <button class="icon-button" aria-label="Save">
+                <svg class="icon"><use href="sprite.svg#icon-bookmark"></use></svg>
+              </button>
+              <button class="icon-button" aria-label="Share">
+                <svg class="icon"><use href="sprite.svg#icon-share"></use></svg>
+              </button>
+            </div>
+            <button class="icon-button" aria-label="More">
+              <svg class="icon"><use href="sprite.svg#icon-more"></use></svg>
+            </button>
+          </div>
+        </article>
+      </section>
+
+      <div class="footer-note">Showing 24 public clips • Auto-tag suggestions enabled</div>
+    </div>
+  </main>
+
+  <div class="modal" data-modal>
+    <div class="modal-card">
+      <div>
+        <div class="player">Fullscreen Clip Player</div>
+        <div class="progress" style="margin-top: 12px;">
+          <span style="width: 65%;"></span>
+        </div>
+      </div>
+      <div class="meta-stack">
+        <h3>Midnight Drift</h3>
+        <div class="tag-row">
+          <span class="tag">#montage</span>
+          <span class="tag">#cinematic</span>
+          <span class="tag">#night</span>
+        </div>
+        <div class="mini-card">
+          <div>
+            <strong>@nova</strong>
+            <div class="footer-note">2.1k followers</div>
+          </div>
+          <button class="button-secondary">Follow</button>
+        </div>
+        <div class="tag-row">
+          <button class="button-primary">Like</button>
+          <button class="button-secondary">Save</button>
+        </div>
+        <button class="button-secondary">Copy Link</button>
+        <button class="button-secondary">Download</button>
+        <button class="button-secondary">Report</button>
+        <button class="button-secondary" data-close-modal>Close</button>
+        <div class="section" style="margin-top: 0;">
+          <h2>Comments (optional)</h2>
+          <div class="skeleton lg"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container">
+    <div class="toast">Saved to your private list</div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VELO | Tag</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-auth="logged-out">
+  <nav class="navbar">
+    <div class="nav-section">
+      <a class="brand" href="index.html">
+        <svg class="icon"><use href="sprite.svg#icon-v"></use></svg>
+        <span>VELO</span>
+      </a>
+    </div>
+    <div class="nav-section">
+      <a class="nav-button" href="index.html">Explore</a>
+      <a class="nav-button" href="upload.html">Upload</a>
+      <a class="nav-button auth-only" href="dashboard.html">Dashboard</a>
+    </div>
+    <div class="nav-section">
+      <a class="nav-button guest-only" href="login.html">Log in</a>
+      <a class="nav-button guest-only" href="signup.html">Sign up</a>
+      <a class="icon-button auth-only" href="profile.html" aria-label="Profile">
+        <svg class="icon"><use href="sprite.svg#icon-user"></use></svg>
+      </a>
+      <a class="icon-button auth-only" href="settings.html" aria-label="Settings">
+        <svg class="icon"><use href="sprite.svg#icon-settings"></use></svg>
+      </a>
+    </div>
+  </nav>
+
+  <main class="page">
+    <div class="container">
+      <section class="hero">
+        <div>
+          <h1>#montage</h1>
+          <p>Trending tag this week • 128 clips</p>
+        </div>
+        <button class="button-secondary">Follow Tag</button>
+      </section>
+
+      <div class="chip-row">
+        <button class="chip active">Trending</button>
+        <button class="chip">Newest</button>
+        <button class="chip">Most Viewed</button>
+      </div>
+
+      <section class="grid cols-3">
+        <article class="clip-card">
+          <div class="clip-thumb"></div>
+          <div class="clip-meta">
+            <h3>Highline Run</h3>
+            <span>@nova • 2h ago</span>
+          </div>
+          <div class="tag-row">
+            <span class="tag">#montage</span>
+            <span class="tag">#action</span>
+          </div>
+        </article>
+        <article class="clip-card">
+          <div class="clip-thumb"></div>
+          <div class="clip-meta">
+            <h3>Pulse Cut</h3>
+            <span>@flare • 9h ago</span>
+          </div>
+          <div class="tag-row">
+            <span class="tag">#montage</span>
+            <span class="tag">#cinematic</span>
+          </div>
+        </article>
+        <article class="clip-card">
+          <div class="clip-thumb"></div>
+          <div class="clip-meta">
+            <h3>Tempo Shift</h3>
+            <span>@vex • 1d ago</span>
+          </div>
+          <div class="tag-row">
+            <span class="tag">#montage</span>
+            <span class="tag">#slowmo</span>
+          </div>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

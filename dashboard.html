@@ -1,0 +1,175 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VELO | Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-auth="logged-in">
+  <nav class="navbar">
+    <div class="nav-section">
+      <a class="brand" href="index.html">
+        <svg class="icon"><use href="sprite.svg#icon-v"></use></svg>
+        <span>VELO</span>
+      </a>
+    </div>
+    <div class="nav-section">
+      <a class="nav-button" href="index.html">Explore</a>
+      <a class="nav-button" href="upload.html">Upload</a>
+      <a class="nav-button auth-only" href="dashboard.html">Dashboard</a>
+    </div>
+    <div class="nav-section">
+      <a class="nav-button guest-only" href="login.html">Log in</a>
+      <a class="nav-button guest-only" href="signup.html">Sign up</a>
+      <a class="icon-button auth-only" href="profile.html" aria-label="Profile">
+        <svg class="icon"><use href="sprite.svg#icon-user"></use></svg>
+      </a>
+      <a class="icon-button auth-only" href="settings.html" aria-label="Settings">
+        <svg class="icon"><use href="sprite.svg#icon-settings"></use></svg>
+      </a>
+    </div>
+  </nav>
+
+  <main class="page">
+    <div class="container">
+      <section class="hero">
+        <div>
+          <h1>Your Dashboard</h1>
+          <p>Manage your clips, collections, and saved content.</p>
+        </div>
+        <div class="tag-row">
+          <button class="button-primary">Upload New</button>
+          <button class="button-secondary">New Collection</button>
+        </div>
+      </section>
+
+      <section class="stat-grid">
+        <div class="stat-card">
+          <h3>42</h3>
+          <span>Uploads</span>
+        </div>
+        <div class="stat-card">
+          <h3>128k</h3>
+          <span>Views</span>
+        </div>
+        <div class="stat-card">
+          <h3>9.4k</h3>
+          <span>Likes</span>
+        </div>
+        <div class="stat-card">
+          <h3>3.1k</h3>
+          <span>Saved by others</span>
+        </div>
+        <div class="stat-card">
+          <h3>18.6 GB</h3>
+          <span>Storage used</span>
+        </div>
+      </section>
+
+      <div class="tabs">
+        <button class="tab active">Your Clips</button>
+        <button class="tab">Collections</button>
+        <button class="tab">Saved</button>
+        <button class="tab">Analytics</button>
+      </div>
+
+      <div class="tag-row" style="justify-content: space-between;">
+        <div class="tag-row">
+          <button class="button-secondary">Grid View</button>
+          <button class="button-secondary">Table View</button>
+        </div>
+        <button class="button-secondary">Sort: Latest</button>
+      </div>
+
+      <section class="grid cols-3">
+        <article class="clip-card">
+          <div class="clip-thumb"></div>
+          <div class="clip-meta">
+            <h3>Midnight Drift</h3>
+            <span>Public • 2h ago</span>
+          </div>
+          <div class="tag-row">
+            <span class="tag">#montage</span>
+            <span class="tag">#cinematic</span>
+          </div>
+          <div class="tag-row">
+            <button class="button-secondary">Edit</button>
+            <button class="button-secondary">Visibility</button>
+            <button class="button-secondary">Replace</button>
+          </div>
+          <div class="tag-row">
+            <button class="icon-button" aria-label="Regenerate thumbnail">
+              <svg class="icon"><use href="sprite.svg#icon-grid"></use></svg>
+            </button>
+            <button class="icon-button" aria-label="Pin">
+              <svg class="icon"><use href="sprite.svg#icon-bookmark"></use></svg>
+            </button>
+            <button class="icon-button" aria-label="Delete">
+              <svg class="icon"><use href="sprite.svg#icon-trash"></use></svg>
+            </button>
+          </div>
+        </article>
+
+        <article class="clip-card">
+          <div class="clip-thumb"></div>
+          <div class="clip-meta">
+            <h3>Steel Skyline</h3>
+            <span>Unlisted • 6h ago</span>
+          </div>
+          <div class="tag-row">
+            <span class="tag">#urban</span>
+            <span class="tag">#timelapse</span>
+          </div>
+          <div class="tag-row">
+            <button class="button-secondary">Edit</button>
+            <button class="button-secondary">Visibility</button>
+            <button class="button-secondary">Replace</button>
+          </div>
+          <div class="tag-row">
+            <button class="icon-button" aria-label="Regenerate thumbnail">
+              <svg class="icon"><use href="sprite.svg#icon-grid"></use></svg>
+            </button>
+            <button class="icon-button" aria-label="Pin">
+              <svg class="icon"><use href="sprite.svg#icon-bookmark"></use></svg>
+            </button>
+            <button class="icon-button" aria-label="Delete">
+              <svg class="icon"><use href="sprite.svg#icon-trash"></use></svg>
+            </button>
+          </div>
+        </article>
+
+        <article class="clip-card">
+          <div class="clip-thumb"></div>
+          <div class="clip-meta">
+            <h3>Subzero Lines</h3>
+            <span>Private • 1w ago</span>
+          </div>
+          <div class="tag-row">
+            <span class="tag">#snow</span>
+            <span class="tag">#slowmo</span>
+          </div>
+          <div class="tag-row">
+            <button class="button-secondary">Edit</button>
+            <button class="button-secondary">Visibility</button>
+            <button class="button-secondary">Replace</button>
+          </div>
+          <div class="tag-row">
+            <button class="icon-button" aria-label="Regenerate thumbnail">
+              <svg class="icon"><use href="sprite.svg#icon-grid"></use></svg>
+            </button>
+            <button class="icon-button" aria-label="Pin">
+              <svg class="icon"><use href="sprite.svg#icon-bookmark"></use></svg>
+            </button>
+            <button class="icon-button" aria-label="Delete">
+              <svg class="icon"><use href="sprite.svg#icon-trash"></use></svg>
+            </button>
+          </div>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

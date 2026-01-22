@@ -1,0 +1,84 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VELO | Collections</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-auth="logged-in">
+  <nav class="navbar">
+    <div class="nav-section">
+      <a class="brand" href="index.html">
+        <svg class="icon"><use href="sprite.svg#icon-v"></use></svg>
+        <span>VELO</span>
+      </a>
+    </div>
+    <div class="nav-section">
+      <a class="nav-button" href="index.html">Explore</a>
+      <a class="nav-button" href="upload.html">Upload</a>
+      <a class="nav-button auth-only" href="dashboard.html">Dashboard</a>
+    </div>
+    <div class="nav-section">
+      <a class="nav-button guest-only" href="login.html">Log in</a>
+      <a class="nav-button guest-only" href="signup.html">Sign up</a>
+      <a class="icon-button auth-only" href="profile.html" aria-label="Profile">
+        <svg class="icon"><use href="sprite.svg#icon-user"></use></svg>
+      </a>
+      <a class="icon-button auth-only" href="settings.html" aria-label="Settings">
+        <svg class="icon"><use href="sprite.svg#icon-settings"></use></svg>
+      </a>
+    </div>
+  </nav>
+
+  <main class="page">
+    <div class="container">
+      <section class="hero">
+        <div>
+          <h1>Collections</h1>
+          <p>Vaults and playlists curated by you and creators you follow.</p>
+        </div>
+        <button class="button-primary">New Collection</button>
+      </section>
+
+      <section class="grid cols-3">
+        <article class="clip-card">
+          <div class="clip-thumb"></div>
+          <div class="clip-meta">
+            <h3>Night Runs</h3>
+            <span>12 clips • Public</span>
+          </div>
+          <div class="tag-row">
+            <span class="tag">#drive</span>
+            <span class="tag">#neon</span>
+          </div>
+        </article>
+        <article class="clip-card">
+          <div class="clip-thumb"></div>
+          <div class="clip-meta">
+            <h3>Lighting Studies</h3>
+            <span>8 clips • Private</span>
+          </div>
+          <div class="tag-row">
+            <span class="tag">#lighting</span>
+            <span class="tag">#tutorial</span>
+          </div>
+        </article>
+        <article class="clip-card">
+          <div class="clip-thumb"></div>
+          <div class="clip-meta">
+            <h3>Hyper Cuts</h3>
+            <span>15 clips • Public</span>
+          </div>
+          <div class="tag-row">
+            <span class="tag">#montage</span>
+            <span class="tag">#action</span>
+          </div>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VELO | Profile</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-auth="logged-in">
+  <nav class="navbar">
+    <div class="nav-section">
+      <a class="brand" href="index.html">
+        <svg class="icon"><use href="sprite.svg#icon-v"></use></svg>
+        <span>VELO</span>
+      </a>
+    </div>
+    <div class="nav-section">
+      <a class="nav-button" href="index.html">Explore</a>
+      <a class="nav-button" href="upload.html">Upload</a>
+      <a class="nav-button auth-only" href="dashboard.html">Dashboard</a>
+    </div>
+    <div class="nav-section">
+      <a class="nav-button guest-only" href="login.html">Log in</a>
+      <a class="nav-button guest-only" href="signup.html">Sign up</a>
+      <a class="icon-button auth-only" href="profile.html" aria-label="Profile">
+        <svg class="icon"><use href="sprite.svg#icon-user"></use></svg>
+      </a>
+      <a class="icon-button auth-only" href="settings.html" aria-label="Settings">
+        <svg class="icon"><use href="sprite.svg#icon-settings"></use></svg>
+      </a>
+    </div>
+  </nav>
+
+  <main class="page">
+    <div class="container">
+      <section class="profile-header">
+        <div class="avatar"></div>
+        <div>
+          <h1 style="margin: 0;">Nova Vale</h1>
+          <div class="footer-note">@nova</div>
+          <p style="margin-top: 8px; color: var(--text-secondary);">Cinematic edits, macro motion, and late-night drives.</p>
+        </div>
+        <button class="button-primary" style="margin-left: auto;">Follow</button>
+      </section>
+
+      <div class="tabs">
+        <button class="tab active">Clips</button>
+        <button class="tab">Collections</button>
+        <button class="tab">Likes</button>
+      </div>
+
+      <section class="grid cols-3">
+        <article class="clip-card">
+          <div class="clip-thumb"></div>
+          <div class="clip-meta">
+            <h3>Midnight Drift</h3>
+            <span>24k views • 2h ago</span>
+          </div>
+          <div class="tag-row">
+            <span class="tag">#montage</span>
+            <span class="tag">#cinematic</span>
+          </div>
+        </article>
+
+        <article class="clip-card">
+          <div class="clip-thumb"></div>
+          <div class="clip-meta">
+            <h3>Glass Runner</h3>
+            <span>19k views • 1d ago</span>
+          </div>
+          <div class="tag-row">
+            <span class="tag">#tutorial</span>
+            <span class="tag">#lighting</span>
+          </div>
+        </article>
+
+        <article class="clip-card">
+          <div class="clip-thumb"></div>
+          <div class="clip-meta">
+            <h3>Subzero Lines</h3>
+            <span>12k views • 1w ago</span>
+          </div>
+          <div class="tag-row">
+            <span class="tag">#snow</span>
+            <span class="tag">#slowmo</span>
+          </div>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

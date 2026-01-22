@@ -1,0 +1,101 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VELO | Upload</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-auth="logged-in">
+  <nav class="navbar">
+    <div class="nav-section">
+      <a class="brand" href="index.html">
+        <svg class="icon"><use href="sprite.svg#icon-v"></use></svg>
+        <span>VELO</span>
+      </a>
+    </div>
+    <div class="nav-section">
+      <a class="nav-button" href="index.html">Explore</a>
+      <a class="nav-button" href="upload.html">Upload</a>
+      <a class="nav-button auth-only" href="dashboard.html">Dashboard</a>
+    </div>
+    <div class="nav-section">
+      <a class="nav-button guest-only" href="login.html">Log in</a>
+      <a class="nav-button guest-only" href="signup.html">Sign up</a>
+      <a class="icon-button auth-only" href="profile.html" aria-label="Profile">
+        <svg class="icon"><use href="sprite.svg#icon-user"></use></svg>
+      </a>
+      <a class="icon-button auth-only" href="settings.html" aria-label="Settings">
+        <svg class="icon"><use href="sprite.svg#icon-settings"></use></svg>
+      </a>
+    </div>
+  </nav>
+
+  <main class="page">
+    <div class="container">
+      <section class="hero">
+        <div>
+          <h1>Upload</h1>
+          <p>Drag in your clip, set visibility, and publish to VELO.</p>
+        </div>
+        <button class="button-secondary">Guidelines</button>
+      </section>
+
+      <section class="split">
+        <div class="dropzone">
+          <svg class="icon" style="width: 32px; height: 32px;"><use href="sprite.svg#icon-upload"></use></svg>
+          <strong>Drop your video here</strong>
+          <span class="footer-note">MP4, MOV, up to 2GB</span>
+          <button class="button-secondary">Select File</button>
+        </div>
+
+        <div class="panel" style="padding: 18px;">
+          <div class="form-section">
+            <div class="form-group">
+              <label>Title (required)</label>
+              <input class="input" placeholder="Clip title" />
+            </div>
+            <div class="form-group">
+              <label>Tags</label>
+              <input class="input" placeholder="Type a tag and press enter" />
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <textarea class="textarea" placeholder="Optional description"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Visibility</label>
+              <div class="chip-row" style="margin-top: 0;">
+                <button class="chip active">Public</button>
+                <button class="chip">Unlisted</button>
+                <button class="chip">Private</button>
+              </div>
+            </div>
+            <div class="toggle">
+              <span>Allow downloads</span>
+              <input type="checkbox" checked />
+            </div>
+            <div class="toggle">
+              <span>Allow embedding</span>
+              <input type="checkbox" checked />
+            </div>
+            <div class="toggle">
+              <span>Content warning</span>
+              <input type="checkbox" />
+            </div>
+            <button class="button-primary">Publish</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Upload Progress</h2>
+        <div class="progress"><span style="width: 32%;"></span></div>
+        <div class="footer-note">Uploading... Generating thumbnail... Publishing...</div>
+      </section>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

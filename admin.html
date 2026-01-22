@@ -1,0 +1,100 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VELO | Admin</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-auth="logged-in">
+  <nav class="navbar">
+    <div class="nav-section">
+      <a class="brand" href="index.html">
+        <svg class="icon"><use href="sprite.svg#icon-v"></use></svg>
+        <span>VELO</span>
+      </a>
+    </div>
+    <div class="nav-section">
+      <a class="nav-button" href="index.html">Explore</a>
+      <a class="nav-button" href="upload.html">Upload</a>
+      <a class="nav-button auth-only" href="dashboard.html">Dashboard</a>
+    </div>
+    <div class="nav-section">
+      <a class="icon-button auth-only" href="settings.html" aria-label="Settings">
+        <svg class="icon"><use href="sprite.svg#icon-settings"></use></svg>
+      </a>
+    </div>
+  </nav>
+
+  <main class="page">
+    <div class="container">
+      <section class="hero">
+        <div>
+          <h1>Admin & Reports</h1>
+          <p>Review reports, set clips private, and manage user bans.</p>
+        </div>
+        <button class="button-secondary">Export Reports</button>
+      </section>
+
+      <section class="section">
+        <h2>Open Reports</h2>
+        <div class="list">
+          <div class="list-item">
+            <div>
+              <strong>Clip: Midnight Drift</strong>
+              <div class="footer-note">Reason: Copyright • 12 minutes ago</div>
+            </div>
+            <div class="tag-row">
+              <button class="button-secondary">View</button>
+              <button class="button-secondary">Set Private</button>
+              <button class="button-secondary">Dismiss</button>
+            </div>
+          </div>
+          <div class="list-item">
+            <div>
+              <strong>User: @flare</strong>
+              <div class="footer-note">Reason: Harassment • 1 hour ago</div>
+            </div>
+            <div class="tag-row">
+              <button class="button-secondary">View</button>
+              <button class="button-secondary">Ban User</button>
+              <button class="button-secondary">Dismiss</button>
+            </div>
+          </div>
+          <div class="list-item">
+            <div>
+              <strong>Clip: Pulse Cut</strong>
+              <div class="footer-note">Reason: NSFW • 3 hours ago</div>
+            </div>
+            <div class="tag-row">
+              <button class="button-secondary">View</button>
+              <button class="button-secondary">Set Private</button>
+              <button class="button-secondary">Dismiss</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Moderation Actions</h2>
+        <div class="list">
+          <div class="list-item">
+            <span>Remove content</span>
+            <button class="button-secondary">Execute</button>
+          </div>
+          <div class="list-item">
+            <span>Ban user</span>
+            <button class="button-secondary">Execute</button>
+          </div>
+          <div class="list-item">
+            <span>Set clips private</span>
+            <button class="button-secondary">Execute</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
