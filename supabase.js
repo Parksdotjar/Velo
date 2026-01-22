@@ -224,7 +224,7 @@ const loadExplore = async () => {
   if (!grid) return;
 
   const baseSelect = 'id,title,created_at,visibility,thumb_path,duration,duration_seconds,likes_count,views_count,allow_downloads,allow_embed,clip_slug,clip_secret';
-  const fullSelect = `${baseSelect},profiles(id,username),clip_tags(tags(name))`;
+  const fullSelect = `${baseSelect},profiles!clips_user_id_fkey(id,username),clip_tags(tags(name))`;
 
   let query = supabaseClient
     .from('clips')
@@ -391,7 +391,7 @@ const loadSaved = async () => {
 
   const { data } = await supabaseClient
     .from('saves')
-    .select('clip_id, clips (id,title,created_at,visibility,thumb_path,duration,likes_count,views_count,profiles(id,username),clip_tags(tags(name)))')
+    .select('clip_id, clips (id,title,created_at,visibility,thumb_path,duration,likes_count,views_count,profiles!clips_user_id_fkey(id,username),clip_tags(tags(name)))')
     .eq('user_id', session.user.id);
 
   const clips = (data || []).map((row) => row.clips).filter(Boolean);
@@ -440,7 +440,7 @@ const loadFollowing = async () => {
 
   const { data } = await supabaseClient
     .from('clips')
-    .select('id,title,created_at,visibility,thumb_path,duration,likes_count,views_count,profiles(id,username),clip_tags(tags(name))')
+    .select('id,title,created_at,visibility,thumb_path,duration,likes_count,views_count,profiles!clips_user_id_fkey(id,username),clip_tags(tags(name))')
     .in('user_id', ids)
     .eq('visibility', 'public')
     .order('created_at', { ascending: false });
@@ -461,7 +461,7 @@ const loadTagPage = async () => {
 
   const { data } = await supabaseClient
     .from('clips')
-    .select('id,title,created_at,visibility,thumb_path,duration,likes_count,views_count,profiles(id,username),clip_tags(tags(name))')
+    .select('id,title,created_at,visibility,thumb_path,duration,likes_count,views_count,profiles!clips_user_id_fkey(id,username),clip_tags(tags(name))')
     .eq('visibility', 'public');
 
   const filtered = (data || []).filter((clip) =>
@@ -515,7 +515,7 @@ const loadProfile = async () => {
   if (grid) {
     const { data: clips } = await supabaseClient
       .from('clips')
-      .select('id,title,created_at,visibility,thumb_path,duration,likes_count,views_count,profiles(id,username),clip_tags(tags(name))')
+      .select('id,title,created_at,visibility,thumb_path,duration,likes_count,views_count,profiles!clips_user_id_fkey(id,username),clip_tags(tags(name))')
       .eq('user_id', profile.id)
       .eq('visibility', 'public')
       .order('created_at', { ascending: false });
