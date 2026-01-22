@@ -229,7 +229,7 @@ const loadExplore = async () => {
   const grid = document.querySelector('[data-clips-grid]');
   if (!grid) return;
 
-  const baseSelect = 'id,title,created_at,visibility,thumb_path,duration,duration_seconds,likes_count,views_count,allow_downloads,allow_embed,clip_slug,clip_secret';
+  const baseSelect = 'id,title,created_at,visibility,thumb_path,video_path,duration,duration_seconds,likes_count,views_count,allow_downloads,allow_embed,clip_slug,clip_secret';
   const fullSelect = `${baseSelect},profiles!clips_user_id_fkey(id,username),clip_tags(tags(name))`;
 
   let query = supabaseClient
@@ -397,7 +397,7 @@ const loadSaved = async () => {
 
   const { data } = await supabaseClient
     .from('saves')
-    .select('clip_id, clips (id,title,created_at,visibility,thumb_path,duration,likes_count,views_count,profiles!clips_user_id_fkey(id,username),clip_tags(tags(name)))')
+    .select('clip_id, clips (id,title,created_at,visibility,thumb_path,video_path,duration,likes_count,views_count,profiles!clips_user_id_fkey(id,username),clip_tags(tags(name)))')
     .eq('user_id', session.user.id);
 
   const clips = (data || []).map((row) => row.clips).filter(Boolean);
@@ -446,7 +446,7 @@ const loadFollowing = async () => {
 
   const { data } = await supabaseClient
     .from('clips')
-    .select('id,title,created_at,visibility,thumb_path,duration,likes_count,views_count,profiles!clips_user_id_fkey(id,username),clip_tags(tags(name))')
+    .select('id,title,created_at,visibility,thumb_path,video_path,duration,likes_count,views_count,profiles!clips_user_id_fkey(id,username),clip_tags(tags(name))')
     .in('user_id', ids)
     .eq('visibility', 'public')
     .order('created_at', { ascending: false });
@@ -467,7 +467,7 @@ const loadTagPage = async () => {
 
   const { data } = await supabaseClient
     .from('clips')
-    .select('id,title,created_at,visibility,thumb_path,duration,likes_count,views_count,profiles!clips_user_id_fkey(id,username),clip_tags(tags(name))')
+    .select('id,title,created_at,visibility,thumb_path,video_path,duration,likes_count,views_count,profiles!clips_user_id_fkey(id,username),clip_tags(tags(name))')
     .eq('visibility', 'public');
 
   const filtered = (data || []).filter((clip) =>
@@ -521,7 +521,7 @@ const loadProfile = async () => {
   if (grid) {
     const { data: clips } = await supabaseClient
       .from('clips')
-      .select('id,title,created_at,visibility,thumb_path,duration,likes_count,views_count,profiles!clips_user_id_fkey(id,username),clip_tags(tags(name))')
+      .select('id,title,created_at,visibility,thumb_path,video_path,duration,likes_count,views_count,profiles!clips_user_id_fkey(id,username),clip_tags(tags(name))')
       .eq('user_id', profile.id)
       .eq('visibility', 'public')
       .order('created_at', { ascending: false });
@@ -551,13 +551,23 @@ const loadClipPage = async () => {
   const titleEl = document.querySelector('[data-clip-title]');
   const creatorEl = document.querySelector('[data-clip-creator]');
   const embedEl = document.querySelector('[data-embed-code]');
+  const player = document.querySelector('[data-clip-player]');
+  const copyBtn = document.querySelector('[data-clip-copy]');
   if (titleEl) titleEl.textContent = clip.title || 'Untitled Clip';
   if (creatorEl) creatorEl.textContent = '@creator';
   if (embedEl) {
     const url = clip.visibility === 'unlisted'
-      ? `${location.origin}/clip.html?slug=${clip.clip_slug}&secret=${clip.clip_secret}`
-      : `${location.origin}/clip.html?id=${clip.id}`;
+      ? `${getBaseUrl()}clip.html?slug=${clip.clip_slug}&secret=${clip.clip_secret}`
+      : `${getBaseUrl()}clip.html?id=${clip.id}`;
     embedEl.textContent = `<iframe src=\"${url}\" width=\"640\" height=\"360\" frameborder=\"0\"></iframe>`;
+    if (copyBtn) copyBtn.onclick = async () => {
+      await navigator.clipboard.writeText(url);
+      showToast('Link copied');
+    };
+  }
+  if (player) {
+    const url = `${SUPABASE_URL}/storage/v1/object/public/clips/${clip.video_path}`;
+    player.innerHTML = `<video src="${url}" controls playsinline style="width:100%; height:100%;"></video>`;
   }
 };
 const hydrateUserReactions = async (clipIds) => {
@@ -647,8 +657,8 @@ const setupClipActions = () => {
       const clip = clipCache.get(clipId);
       if (clip) {
         const shareUrl = clip.visibility === 'unlisted'
-          ? `${location.origin}/clip.html?slug=${clip.clip_slug}&secret=${clip.clip_secret}`
-          : `${location.origin}/clip.html?id=${clip.id}`;
+          ? `${getBaseUrl()}clip.html?slug=${clip.clip_slug}&secret=${clip.clip_secret}`
+          : `${getBaseUrl()}clip.html?id=${clip.id}`;
         await navigator.clipboard.writeText(shareUrl);
         showToast('Link copied');
       }
@@ -1105,8 +1115,8 @@ const setupModalActions = () => {
       const clip = clipCache.get(activeClipId);
       if (!clip) return;
       const shareUrl = clip.visibility === 'unlisted'
-        ? `${location.origin}/clip.html?slug=${clip.clip_slug}&secret=${clip.clip_secret}`
-        : `${location.origin}/clip.html?id=${clip.id}`;
+        ? `${getBaseUrl()}clip.html?slug=${clip.clip_slug}&secret=${clip.clip_secret}`
+        : `${getBaseUrl()}clip.html?id=${clip.id}`;
       await navigator.clipboard.writeText(shareUrl);
       showToast('Link copied');
     }
