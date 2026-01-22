@@ -31,6 +31,9 @@
   <symbol id="icon-heart" viewBox="0 0 24 24">
     <path d="M12 20s-7-4.5-7-9a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 4.5-7 9-7 9z" fill="none" stroke="white" stroke-width="2" stroke-linejoin="round"/>
   </symbol>
+  <symbol id="icon-heart-filled" viewBox="0 0 24 24">
+    <path d="M12 20s-7-4.5-7-9a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 4.5-7 9-7 9z" fill="white" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+  </symbol>
   <symbol id="icon-bookmark" viewBox="0 0 24 24">
     <path d="M7 4h10v16l-5-4-5 4z" fill="none" stroke="white" stroke-width="2" stroke-linejoin="round"/>
   </symbol>

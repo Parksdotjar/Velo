@@ -132,6 +132,16 @@ body.page-enter .page {
   border-color: var(--hover-gray);
 }
 
+.icon-button[aria-pressed="true"] {
+  background: var(--hover-gray);
+  border-color: var(--hover-gray);
+}
+
+.button-secondary[aria-pressed="true"] {
+  background: var(--hover-gray);
+  border-color: var(--hover-gray);
+}
+
 .panel:hover {
   border-color: var(--hover-gray);
 }

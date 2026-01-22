@@ -137,6 +137,7 @@ const buildClipCard = (clip) => {
     ? `${SUPABASE_URL}/storage/v1/object/public/thumbs/${clip.thumb_path}`
     : '';
   const likesCount = clip.likes_count ?? 0;
+  const likeIcon = 'sprite.svg#icon-heart';
 
   return `
     <article class="clip-card" data-open-modal data-clip-id="${clip.id}" data-user-id="${creatorId}">
@@ -153,7 +154,7 @@ const buildClipCard = (clip) => {
       <div class="quick-actions">
         <div class="tag-row">
           <button class="icon-button" data-action="like" aria-label="Like">
-            <svg class="icon"><use href="sprite.svg#icon-heart"></use></svg>
+            <svg class="icon" data-like-icon><use href="${likeIcon}"></use></svg>
           </button>
           <span class="like-count">${likesCount}</span>
           <button class="icon-button" data-action="save" aria-label="Save">
@@ -162,6 +163,11 @@ const buildClipCard = (clip) => {
           <button class="icon-button" data-action="share" aria-label="Share">
             <svg class="icon"><use href="sprite.svg#icon-share"></use></svg>
           </button>
+          ${clip.allow_downloads ? `
+          <button class="icon-button" data-action="download" aria-label="Download">
+            <svg class="icon"><use href="sprite.svg#icon-download"></use></svg>
+          </button>
+          ` : ''}
         </div>
         <button class="icon-button" aria-label="More">
           <svg class="icon"><use href="sprite.svg#icon-more"></use></svg>
@@ -579,6 +585,8 @@ const hydrateUserReactions = async (clipIds) => {
     if (likedSet.has(clipId)) {
       const likeBtn = card.querySelector('[data-action="like"]');
       if (likeBtn) likeBtn.setAttribute('aria-pressed', 'true');
+      const likeIcon = card.querySelector('[data-like-icon] use');
+      if (likeIcon) likeIcon.setAttribute('href', 'sprite.svg#icon-heart-filled');
     }
     if (savedSet.has(clipId)) {
       const saveBtn = card.querySelector('[data-action="save"]');
@@ -593,6 +601,7 @@ const setupClipActions = () => {
     const likeBtn = event.target.closest('[data-action="like"]');
     const saveBtn = event.target.closest('[data-action="save"]');
     const shareBtn = event.target.closest('[data-action="share"]');
+    const downloadBtn = event.target.closest('[data-action="download"]');
     const card = event.target.closest('[data-clip-id]');
 
     if (likeBtn && card) {
@@ -602,14 +611,17 @@ const setupClipActions = () => {
       const clipId = card.getAttribute('data-clip-id');
       const isActive = likeBtn.getAttribute('aria-pressed') === 'true';
       const countEl = card.querySelector('.like-count');
+      const iconUse = likeBtn.querySelector('[data-like-icon] use');
       const currentCount = countEl ? Number(countEl.textContent) : 0;
       if (isActive) {
         await supabaseClient.from('likes').delete().eq('clip_id', clipId).eq('user_id', session.user.id);
         likeBtn.setAttribute('aria-pressed', 'false');
+        if (iconUse) iconUse.setAttribute('href', 'sprite.svg#icon-heart');
         if (countEl) countEl.textContent = Math.max(0, currentCount - 1);
       } else {
         await supabaseClient.from('likes').insert({ clip_id: clipId, user_id: session.user.id });
         likeBtn.setAttribute('aria-pressed', 'true');
+        if (iconUse) iconUse.setAttribute('href', 'sprite.svg#icon-heart-filled');
         if (countEl) countEl.textContent = currentCount + 1;
       }
     }
@@ -640,6 +652,24 @@ const setupClipActions = () => {
         await navigator.clipboard.writeText(shareUrl);
         showToast('Link copied');
       }
+    }
+
+    if (downloadBtn && card) {
+      event.preventDefault();
+      const clipId = card.getAttribute('data-clip-id');
+      const clip = clipCache.get(clipId);
+      if (!clip) return;
+      if (!clip.allow_downloads) {
+        showToast('Downloads disabled');
+        return;
+      }
+      const url = `${SUPABASE_URL}/storage/v1/object/public/clips/${clip.video_path}`;
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = clip.video_path?.split('/').pop() || 'velo-clip';
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
     }
 
     if (card && !likeBtn && !saveBtn && !shareBtn) {
@@ -1049,6 +1079,10 @@ const hydrateModal = (clipId) => {
     tagsEl.innerHTML = tags.map((tag) => `<span class="tag">#${tag}</span>`).join('');
   }
   if (followBtn) followBtn.setAttribute('data-follow-id', clip.profiles?.id || '');
+  if (followBtn) {
+    followBtn.textContent = 'Follow';
+    followBtn.setAttribute('aria-pressed', 'false');
+  }
   if (downloadBtn) downloadBtn.style.display = clip.allow_downloads ? 'inline-flex' : 'none';
 };
 
@@ -1081,7 +1115,12 @@ const setupModalActions = () => {
       const clip = clipCache.get(activeClipId);
       if (!clip) return;
       const url = `${SUPABASE_URL}/storage/v1/object/public/clips/${clip.video_path}`;
-      window.open(url, '_blank');
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = clip.video_path?.split('/').pop() || 'velo-clip';
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
     }
 
     if (reportBtn && activeClipId) {
