@@ -748,15 +748,20 @@ const setupAuthForms = () => {
         return;
       }
       setMessage(loginForm, '');
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        const msg = error.message.includes('Email not confirmed')
-          ? 'Please confirm your email before logging in.'
-          : error.message;
-        setMessage(loginForm, msg, true);
-        return;
+      try {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          const msg = error.message.includes('Email not confirmed')
+            ? 'Please confirm your email before logging in.'
+            : error.message;
+          setMessage(loginForm, msg, true);
+          return;
+        }
+        window.location.href = 'dashboard.html';
+      } catch (err) {
+        setMessage(loginForm, 'Network error. Open the GitHub Pages URL (not github.com or file://).', true);
+        console.error(err);
       }
-      window.location.href = 'dashboard.html';
     });
   }
 
@@ -774,40 +779,48 @@ const setupAuthForms = () => {
         return;
       }
 
-      const { data: existing } = await supabase
-        .from('profiles')
-        .select('id')
-        .ilike('username', username)
-        .limit(1);
-      if (existing && existing.length) {
-        setMessage(signupForm, 'Username is already taken.', true);
-        return;
-      }
-
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { display_name: displayName, username },
-          emailRedirectTo: AUTH_REDIRECT
+      try {
+        const { data: existing, error: existingError } = await supabase
+          .from('profiles')
+          .select('id')
+          .ilike('username', username)
+          .limit(1);
+        if (existingError) {
+          console.warn(existingError);
         }
-      });
+        if (existing && existing.length) {
+          setMessage(signupForm, 'Username is already taken.', true);
+          return;
+        }
 
-      if (error) {
-        setMessage(signupForm, error.message, true);
-        return;
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { display_name: displayName, username },
+            emailRedirectTo: AUTH_REDIRECT
+          }
+        });
+
+        if (error) {
+          setMessage(signupForm, error.message, true);
+          return;
+        }
+
+        if (data.session) {
+          await supabase.from('profiles').upsert(
+            { id: data.user.id, username, display_name: displayName },
+            { onConflict: 'id' }
+          );
+          window.location.href = 'dashboard.html';
+          return;
+        }
+
+        setMessage(signupForm, 'Check your email to confirm your account, then log in.');
+      } catch (err) {
+        setMessage(signupForm, 'Network error. Open the GitHub Pages URL (not github.com or file://).', true);
+        console.error(err);
       }
-
-      if (data.session) {
-        await supabase.from('profiles').upsert(
-          { id: data.user.id, username, display_name: displayName },
-          { onConflict: 'id' }
-        );
-        window.location.href = 'dashboard.html';
-        return;
-      }
-
-      setMessage(signupForm, 'Check your email to confirm your account, then log in.');
     });
   }
 };
