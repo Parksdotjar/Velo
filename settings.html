@@ -6,7 +6,7 @@
   <title>VELO | Settings</title>  <meta name="color-scheme" content="dark" />  <style>html, body { background: #000000; color: #ffffff; }</style>
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body data-auth="logged-in" data-stagger="on" data-page="settings">
+<body data-auth="logged-out" data-stagger="on" data-page="settings">
   <nav class="navbar">
     <div class="nav-section">
       <a class="brand" href="index.html">
@@ -45,23 +45,23 @@
         <div class="list">
           <div class="list-item">
             <span>Change display name</span>
-            <button class="button-secondary">Edit</button>
+            <button class="button-secondary" data-action="display-name">Edit</button>
           </div>
           <div class="list-item">
             <span>Change username</span>
-            <button class="button-secondary">Edit</button>
+            <button class="button-secondary" data-action="username">Edit</button>
           </div>
           <div class="list-item">
             <span>Change email</span>
-            <button class="button-secondary">Edit</button>
+            <button class="button-secondary" data-action="email">Edit</button>
           </div>
           <div class="list-item">
             <span>Reset password</span>
-            <button class="button-secondary">Reset</button>
+            <button class="button-secondary" data-action="reset-password">Reset</button>
           </div>
           <div class="list-item">
             <span>Sign out everywhere</span>
-            <button class="button-secondary">Sign out</button>
+            <button class="button-secondary" data-action="signout">Sign out</button>
           </div>
         </div>
       </section>
@@ -71,15 +71,15 @@
         <div class="list">
           <div class="toggle">
             <span>Default visibility: Public</span>
-            <input type="checkbox" checked />
+            <input type="checkbox" data-setting="default_visibility" checked />
           </div>
           <div class="toggle">
             <span>Default allow downloads</span>
-            <input type="checkbox" checked />
+            <input type="checkbox" data-setting="default_allow_downloads" checked />
           </div>
           <div class="toggle">
             <span>Default allow embed</span>
-            <input type="checkbox" />
+            <input type="checkbox" data-setting="default_allow_embed" />
           </div>
         </div>
       </section>
@@ -89,15 +89,15 @@
         <div class="list">
           <div class="toggle">
             <span>Hide likes publicly</span>
-            <input type="checkbox" />
+            <input type="checkbox" data-setting="hide_likes" />
           </div>
           <div class="toggle">
             <span>Hide saved publicly</span>
-            <input type="checkbox" checked />
+            <input type="checkbox" data-setting="hide_saves" checked />
           </div>
           <div class="toggle">
             <span>Profile visibility</span>
-            <input type="checkbox" checked />
+            <input type="checkbox" data-setting="profile_visible" checked />
           </div>
         </div>
       </section>
@@ -107,15 +107,15 @@
         <div class="list">
           <div class="toggle">
             <span>Autoplay previews</span>
-            <input type="checkbox" />
+            <input type="checkbox" data-setting="autoplay_previews" />
           </div>
           <div class="toggle">
             <span>Default volume muted</span>
-            <input type="checkbox" checked />
+            <input type="checkbox" data-setting="default_muted" checked />
           </div>
           <div class="toggle">
             <span>Default playback speed</span>
-            <input type="checkbox" />
+            <input type="checkbox" data-setting="default_speed" />
           </div>
         </div>
       </section>
@@ -139,11 +139,11 @@
         <div class="list">
           <div class="list-item">
             <span>Export account data</span>
-            <button class="button-secondary">Export</button>
+            <button class="button-secondary" data-action="export">Export</button>
           </div>
           <div class="list-item">
             <span>Delete account</span>
-            <button class="button-secondary">Delete</button>
+            <button class="button-secondary" data-action="delete-account">Delete</button>
           </div>
         </div>
       </section>
@@ -153,5 +153,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>  <script src="supabase.js" defer></script>  <script src="app.js" defer></script>
 </body>
 </html>
+
 
 

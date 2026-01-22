@@ -35,8 +35,8 @@
     <div class="container">
       <section class="hero">
         <div>
-          <h1>#montage</h1>
-          <p>Trending tag this week • 128 clips</p>
+          <h1 data-tag-title></h1>
+          <p data-tag-subtitle></p>
         </div>
         <button class="button-secondary">Follow Tag</button>
       </section>
@@ -47,12 +47,13 @@
         <button class="chip">Most Viewed</button>
       </div>
 
-      <section class="grid cols-3"></section>
+      <section class="grid cols-3" data-tag-grid></section>
     </div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>  <script src="supabase.js" defer></script>  <script src="app.js" defer></script>
 </body>
 </html>
+
 
 

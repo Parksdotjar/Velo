@@ -88,7 +88,7 @@
   <div class="modal" data-modal>
     <div class="modal-card">
       <div>
-        <div class="player">Fullscreen Clip Player</div>
+        <div class="player" data-modal-player>Fullscreen Clip Player</div>
         <div class="progress" style="margin-top: 12px;">
           <span style="width: 65%;"></span>
         </div>
@@ -106,12 +106,12 @@
           <button class="button-secondary" data-follow-btn data-follow-id="">Follow</button>
         </div>
         <div class="tag-row">
-          <button class="button-primary">Like</button>
-          <button class="button-secondary">Save</button>
+          <button class="button-primary" data-modal-like>Like</button>
+          <button class="button-secondary" data-modal-save>Save</button>
         </div>
-        <button class="button-secondary">Copy Link</button>
-        <button class="button-secondary">Download</button>
-        <button class="button-secondary">Report</button>
+        <button class="button-secondary" data-modal-copy>Copy Link</button>
+        <button class="button-secondary" data-modal-download>Download</button>
+        <button class="button-secondary" data-modal-report>Report</button>
         <button class="button-secondary" data-close-modal>Close</button>
         <div class="section" style="margin-top: 0;">
           <h2>Comments (optional)</h2>
@@ -126,5 +126,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>  <script src="supabase.js" defer></script>  <script src="app.js" defer></script>
 </body>
 </html>
+
 
 

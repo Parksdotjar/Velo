@@ -132,6 +132,14 @@ body.page-enter .page {
   border-color: var(--hover-gray);
 }
 
+.panel:hover {
+  border-color: var(--hover-gray);
+}
+
+.list-item:hover {
+  border-color: var(--hover-gray);
+}
+
 .icon {
   width: 18px;
   height: 18px;
@@ -491,6 +499,11 @@ body.page-enter .page {
   background: var(--hover-gray);
 }
 
+.tab:hover {
+  border-color: var(--hover-gray);
+  color: var(--text-white);
+}
+
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -643,6 +656,40 @@ body.page-enter .page {
   transition: opacity 0.6s ease;
   animation: loader-out 0.6s ease forwards;
   animation-delay: 1.2s;
+}
+
+.auth-blocker {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.auth-blocker.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.auth-blocker .auth-message {
+  padding: 14px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--border-gray);
+  background: var(--panel-black);
+  color: var(--text-white);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+body.is-blurred main,
+body.is-blurred nav {
+  filter: blur(6px);
+  transition: filter 0.2s ease;
 }
 
 .loader-overlay.dismiss {

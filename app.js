@@ -8,6 +8,26 @@ const mainRoot = document.querySelector('main');
 const groupedItems = [];
 let flatItems = [];
 let isTransitioning = false;
+const authBlocker = (() => {
+  const blocker = document.createElement('div');
+  blocker.className = 'auth-blocker';
+  blocker.innerHTML = '<div class="auth-message">Login First</div>';
+  document.body.appendChild(blocker);
+  return blocker;
+})();
+
+const isLoggedIn = () => document.body.getAttribute('data-auth') === 'logged-in';
+const isAuthReady = () => document.body.getAttribute('data-auth-ready') === 'true';
+
+const showAuthBlocker = (redirect = null) => {
+  document.body.classList.add('is-blurred');
+  authBlocker.classList.add('active');
+  setTimeout(() => {
+    authBlocker.classList.remove('active');
+    document.body.classList.remove('is-blurred');
+    if (redirect) window.location.href = redirect;
+  }, 2000);
+};
 
 const getDomOrder = (items) => {
   return items.sort((a, b) => {
@@ -196,10 +216,18 @@ document.addEventListener('keydown', (event) => {
   }
 
   if (event.key.toLowerCase() === 'u') {
+    if (isAuthReady() && !isLoggedIn()) {
+      showAuthBlocker();
+      return;
+    }
     window.location.href = 'upload.html';
   }
 
   if (event.key.toLowerCase() === 'd') {
+    if (isAuthReady() && !isLoggedIn()) {
+      showAuthBlocker();
+      return;
+    }
     window.location.href = 'dashboard.html';
   }
 
@@ -225,6 +253,17 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+document.addEventListener('click', (event) => {
+  const link = event.target.closest('a[href]');
+  if (!link) return;
+  const href = link.getAttribute('href') || '';
+  const protectedRoutes = ['upload.html', 'dashboard.html', 'settings.html'];
+  if (protectedRoutes.includes(href) && isAuthReady() && !isLoggedIn()) {
+    event.preventDefault();
+    showAuthBlocker();
+  }
+});
+
 window.addEventListener('load', () => {
   requestAnimationFrame(() => {
     if (loader) {
@@ -236,6 +275,17 @@ window.addEventListener('load', () => {
       document.body.classList.add('is-loaded');
       runReveal();
     }
+    const page = document.body.getAttribute('data-page');
+    const checkProtected = () => {
+      if (!isAuthReady()) {
+        setTimeout(checkProtected, 100);
+        return;
+      }
+      if (!isLoggedIn() && (page === 'upload' || page === 'dashboard' || page === 'settings')) {
+        showAuthBlocker('login.html');
+      }
+    };
+    checkProtected();
   });
 });
 

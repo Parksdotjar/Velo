@@ -1,20 +1,49 @@
-﻿const SUPABASE_URL = 'https://juagusbfswxcwenzegfg.supabase.co';
+﻿
+const SUPABASE_URL = 'https://juagusbfswxcwenzegfg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1YWd1c2Jmc3d4Y3dlbnplZ2ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMzk5NzksImV4cCI6MjA4NDYxNTk3OX0.fe76LO6mVP9Okqj9JNhr2EQF7mx-o6F95QrEIOz8yaw';
 
 const supabase = window.supabase?.createClient
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
+
 const page = document.body.getAttribute('data-page');
+const getBaseUrl = () => {
+  const path = window.location.pathname;
+  const base = path.endsWith('/') ? path : path.replace(/[^/]*$/, '');
+  return `${window.location.origin}${base}`;
+};
+const AUTH_REDIRECT = `${getBaseUrl()}login.html`;
+
+const showToast = (message) => {
+  const container = document.querySelector('.toast-container');
+  if (!container) return;
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+};
 
 const setAuthState = (session) => {
   document.body.setAttribute('data-auth', session ? 'logged-in' : 'logged-out');
 };
 
 const fetchSession = async () => {
+  if (!supabase) return null;
   const { data } = await supabase.auth.getSession();
   setAuthState(data.session);
   return data.session;
 };
+
+if (supabase) {
+  supabase.auth.onAuthStateChange((_event, session) => {
+    setAuthState(session);
+    if (session) {
+      const profileLink = document.querySelector('a[aria-label="Profile"]');
+      if (profileLink) profileLink.href = `profile.html?id=${session.user.id}`;
+    }
+  });
+}
 
 const formatTimeAgo = (dateString) => {
   const date = new Date(dateString);
@@ -25,7 +54,45 @@ const formatTimeAgo = (dateString) => {
   return `${Math.floor(diff / 86400)}d ago`;
 };
 
-const clipCache = new Map();
+const randomSecret = () => Math.random().toString(36).slice(2, 10);
+
+const selectFile = (accept) => {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    if (accept) input.accept = accept;
+    input.onchange = () => resolve(input.files[0] || null);
+    input.click();
+  });
+};
+
+const createThumbnail = (file) => {
+  return new Promise((resolve) => {
+    const video = document.createElement('video');
+    const canvas = document.createElement('canvas');
+    const url = URL.createObjectURL(file);
+    video.src = url;
+    video.muted = true;
+    video.playsInline = true;
+
+    video.addEventListener('loadedmetadata', () => {
+      const duration = video.duration || 0;
+      const seekTime = Math.min(1, Math.max(0, duration / 4));
+      video.currentTime = seekTime;
+    });
+
+    video.addEventListener('seeked', () => {
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 360;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) => {
+        URL.revokeObjectURL(url);
+        resolve({ blob, duration: video.duration || 0 });
+      }, 'image/jpeg', 0.82);
+    });
+  });
+};
 
 const buildClipCard = (clip) => {
   const tags = (clip.clip_tags || []).map((ct) => ct.tags?.name).filter(Boolean);
@@ -58,7 +125,7 @@ const buildClipCard = (clip) => {
           <button class="icon-button" data-action="save" aria-label="Save">
             <svg class="icon"><use href="sprite.svg#icon-bookmark"></use></svg>
           </button>
-          <button class="icon-button" aria-label="Share">
+          <button class="icon-button" data-action="share" aria-label="Share">
             <svg class="icon"><use href="sprite.svg#icon-share"></use></svg>
           </button>
         </div>
@@ -69,6 +136,39 @@ const buildClipCard = (clip) => {
     </article>
   `;
 };
+
+const buildDashboardCard = (clip) => {
+  const thumbUrl = clip.thumb_path
+    ? `${SUPABASE_URL}/storage/v1/object/public/thumbs/${clip.thumb_path}`
+    : '';
+  return `
+    <article class="clip-card" data-clip-id="${clip.id}">
+      <div class="clip-thumb" style="${thumbUrl ? `background-image: url('${thumbUrl}'); background-size: cover; background-position: center;` : ''}"></div>
+      <div class="clip-meta">
+        <h3>${clip.title || 'Untitled Clip'}</h3>
+        <span>${clip.visibility} • ${formatTimeAgo(clip.created_at)}</span>
+      </div>
+      <div class="tag-row">
+        <button class="button-secondary" data-action="edit">Edit</button>
+        <button class="button-secondary" data-action="visibility">Visibility</button>
+        <button class="button-secondary" data-action="replace">Replace</button>
+      </div>
+      <div class="tag-row">
+        <button class="icon-button" data-action="thumbnail" aria-label="Regenerate thumbnail">
+          <svg class="icon"><use href="sprite.svg#icon-grid"></use></svg>
+        </button>
+        <button class="icon-button" data-action="pin" aria-label="Pin">
+          <svg class="icon"><use href="sprite.svg#icon-bookmark"></use></svg>
+        </button>
+        <button class="icon-button" data-action="delete" aria-label="Delete">
+          <svg class="icon"><use href="sprite.svg#icon-trash"></use></svg>
+        </button>
+      </div>
+    </article>
+  `;
+};
+const clipCache = new Map();
+let currentClipId = null;
 
 let exploreState = {
   sort: 'new',
@@ -85,12 +185,13 @@ const parseSearch = (value) => {
 };
 
 const loadExplore = async () => {
+  if (!supabase) return;
   const grid = document.querySelector('[data-clips-grid]');
   if (!grid) return;
 
   let query = supabase
     .from('clips')
-    .select('id,title,created_at,visibility,thumb_path,duration,duration_seconds,likes_count,views_count,profiles(id,username),clip_tags(tags(name))')
+    .select('id,title,created_at,visibility,thumb_path,duration,duration_seconds,likes_count,views_count,allow_downloads,allow_embed,clip_slug,clip_secret,profiles(id,username),clip_tags(tags(name))')
     .eq('visibility', 'public');
 
   const { text, tags } = parseSearch(exploreState.search);
@@ -98,21 +199,14 @@ const loadExplore = async () => {
     query = query.ilike('title', `%${text}%`);
   }
 
-  if (exploreState.sort === 'views') {
-    query = query.order('views_count', { ascending: false });
-  } else if (exploreState.sort === 'likes') {
-    query = query.order('likes_count', { ascending: false });
-  } else {
-    query = query.order('created_at', { ascending: false });
-  }
-
-  const { data, error } = await query.limit(40);
+  const { data, error } = await query.limit(80);
   if (error) {
     console.error(error);
     return;
   }
 
   let filtered = data || [];
+
   if (exploreState.tag) {
     filtered = filtered.filter((clip) =>
       (clip.clip_tags || []).some((ct) => ct.tags?.name === exploreState.tag)
@@ -132,6 +226,16 @@ const loadExplore = async () => {
       if (max === '+') return clip.duration_seconds >= Number(min);
       return clip.duration_seconds >= Number(min) && clip.duration_seconds < Number(max);
     });
+  }
+
+  if (exploreState.sort === 'views') {
+    filtered.sort((a, b) => (b.views_count || 0) - (a.views_count || 0));
+  } else if (exploreState.sort === 'likes') {
+    filtered.sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0));
+  } else if (exploreState.sort === 'trending') {
+    filtered.sort((a, b) => ((b.views_count || 0) + (b.likes_count || 0)) - ((a.views_count || 0) + (a.likes_count || 0)));
+  } else {
+    filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   }
 
   clipCache.clear();
@@ -183,9 +287,16 @@ const setupExploreFilters = () => {
       loadExplore();
     });
   });
-};
 
+  const filterBtn = document.querySelector('.filter-button');
+  if (filterBtn) {
+    filterBtn.addEventListener('click', () => {
+      showToast('Advanced filters coming next.');
+    });
+  }
+};
 const loadDashboard = async () => {
+  if (!supabase) return;
   const grid = document.querySelector('[data-dashboard-grid]');
   if (!grid) return;
   const session = await fetchSession();
@@ -193,7 +304,7 @@ const loadDashboard = async () => {
 
   const { data, error } = await supabase
     .from('clips')
-    .select('id,title,created_at,visibility,thumb_path,duration')
+    .select('id,title,created_at,visibility,thumb_path,likes_count,views_count,saves_count,pinned')
     .eq('user_id', session.user.id)
     .order('created_at', { ascending: false });
 
@@ -202,19 +313,24 @@ const loadDashboard = async () => {
     return;
   }
 
-  grid.innerHTML = (data || []).map((clip) => `
-    <article class="clip-card" data-clip-id="${clip.id}">
-      <div class="clip-thumb" style="${clip.thumb_path ? `background-image: url('${SUPABASE_URL}/storage/v1/object/public/thumbs/${clip.thumb_path}'); background-size: cover; background-position: center;` : ''}"></div>
-      <div class="clip-meta">
-        <h3>${clip.title || 'Untitled Clip'}</h3>
-        <span>${clip.visibility} • ${formatTimeAgo(clip.created_at)}</span>
-      </div>
-      <div class="tag-row">
-        <button class="button-secondary" data-action="visibility">Visibility</button>
-        <button class="button-secondary" data-action="delete">Delete</button>
-      </div>
-    </article>
-  `).join('');
+  grid.innerHTML = (data || []).map(buildDashboardCard).join('');
+
+  const uploads = data?.length || 0;
+  const views = (data || []).reduce((sum, clip) => sum + (clip.views_count || 0), 0);
+  const likes = (data || []).reduce((sum, clip) => sum + (clip.likes_count || 0), 0);
+  const saves = (data || []).reduce((sum, clip) => sum + (clip.saves_count || 0), 0);
+
+  const statUploads = document.querySelector('[data-stat-uploads]');
+  const statViews = document.querySelector('[data-stat-views]');
+  const statLikes = document.querySelector('[data-stat-likes]');
+  const statSaves = document.querySelector('[data-stat-saves]');
+  const statStorage = document.querySelector('[data-stat-storage]');
+
+  if (statUploads) statUploads.textContent = uploads;
+  if (statViews) statViews.textContent = views;
+  if (statLikes) statLikes.textContent = likes;
+  if (statSaves) statSaves.textContent = saves;
+  if (statStorage) statStorage.textContent = `${(uploads * 0.15).toFixed(1)} GB`;
 
   if (window.veloStagger) {
     window.veloStagger.prepareStagger();
@@ -222,13 +338,104 @@ const loadDashboard = async () => {
   }
 };
 
+const loadSaved = async () => {
+  if (!supabase) return;
+  const grid = document.querySelector('[data-saved-grid]');
+  if (!grid) return;
+  const session = await fetchSession();
+  if (!session) return;
+
+  const { data } = await supabase
+    .from('saves')
+    .select('clip_id, clips (id,title,created_at,visibility,thumb_path,duration,likes_count,views_count,profiles(id,username),clip_tags(tags(name)))')
+    .eq('user_id', session.user.id);
+
+  const clips = (data || []).map((row) => row.clips).filter(Boolean);
+  grid.innerHTML = clips.map(buildClipCard).join('');
+};
+
+const loadCollections = async () => {
+  if (!supabase) return;
+  const grid = document.querySelector('[data-collections-grid]');
+  if (!grid) return;
+  const session = await fetchSession();
+
+  let query = supabase.from('collections').select('*').order('created_at', { ascending: false });
+  if (session) query = query.eq('user_id', session.user.id);
+  else query = query.eq('visibility', 'public');
+
+  const { data } = await query;
+  grid.innerHTML = (data || []).map((col) => `
+    <article class="clip-card" data-collection-id="${col.id}">
+      <div class="clip-thumb"></div>
+      <div class="clip-meta">
+        <h3>${col.title}</h3>
+        <span>${col.visibility} • ${formatTimeAgo(col.created_at)}</span>
+      </div>
+    </article>
+  `).join('');
+};
+
+const loadFollowing = async () => {
+  if (!supabase) return;
+  const grid = document.querySelector('[data-following-grid]');
+  if (!grid) return;
+  const session = await fetchSession();
+  if (!session) return;
+
+  const { data: follows } = await supabase
+    .from('follows')
+    .select('following_id')
+    .eq('follower_id', session.user.id);
+
+  const ids = (follows || []).map((row) => row.following_id);
+  if (!ids.length) {
+    grid.innerHTML = '';
+    return;
+  }
+
+  const { data } = await supabase
+    .from('clips')
+    .select('id,title,created_at,visibility,thumb_path,duration,likes_count,views_count,profiles(id,username),clip_tags(tags(name))')
+    .in('user_id', ids)
+    .eq('visibility', 'public')
+    .order('created_at', { ascending: false });
+
+  grid.innerHTML = (data || []).map(buildClipCard).join('');
+};
+
+const loadTagPage = async () => {
+  if (!supabase || page !== 'tag') return;
+  const grid = document.querySelector('[data-tag-grid]');
+  const title = document.querySelector('[data-tag-title]');
+  const subtitle = document.querySelector('[data-tag-subtitle]');
+  const params = new URLSearchParams(window.location.search);
+  const tag = params.get('tag');
+  if (!tag || !grid) return;
+
+  if (title) title.textContent = `#${tag}`;
+
+  const { data } = await supabase
+    .from('clips')
+    .select('id,title,created_at,visibility,thumb_path,duration,likes_count,views_count,profiles(id,username),clip_tags(tags(name))')
+    .eq('visibility', 'public');
+
+  const filtered = (data || []).filter((clip) =>
+    (clip.clip_tags || []).some((ct) => ct.tags?.name === tag)
+  );
+
+  if (subtitle) subtitle.textContent = `${filtered.length} clips`;
+  grid.innerHTML = filtered.map(buildClipCard).join('');
+};
+
 const loadProfile = async () => {
+  if (!supabase || page !== 'profile') return;
   const grid = document.querySelector('[data-profile-grid]');
   const nameEl = document.querySelector('[data-profile-name]');
   const userEl = document.querySelector('[data-profile-username]');
   const bioEl = document.querySelector('[data-profile-bio]');
   const avatarEl = document.querySelector('[data-profile-avatar]');
-  const followBtn = document.querySelector('.modal [data-follow-id]');
+  const followBtn = document.querySelector('[data-follow-id]');
 
   const params = new URLSearchParams(window.location.search);
   const username = params.get('user');
@@ -242,6 +449,14 @@ const loadProfile = async () => {
 
   const { data: profile } = await profileQuery;
   if (!profile) return;
+
+  if (!profile.profile_visible) {
+    if (nameEl) nameEl.textContent = 'Private Profile';
+    if (userEl) userEl.textContent = '';
+    if (bioEl) bioEl.textContent = '';
+    if (grid) grid.innerHTML = '';
+    return;
+  }
 
   if (nameEl) nameEl.textContent = profile.display_name || profile.username;
   if (userEl) userEl.textContent = `@${profile.username}`;
@@ -262,15 +477,11 @@ const loadProfile = async () => {
       .order('created_at', { ascending: false });
 
     grid.innerHTML = (clips || []).map(buildClipCard).join('');
-    if (window.veloStagger) {
-      window.veloStagger.prepareStagger();
-      window.veloStagger.runReveal();
-    }
   }
 };
 
 const loadClipPage = async () => {
-  if (page !== 'clip') return;
+  if (!supabase || page !== 'clip') return;
   const params = new URLSearchParams(window.location.search);
   const slug = params.get('slug');
   const secret = params.get('secret');
@@ -289,11 +500,18 @@ const loadClipPage = async () => {
 
   const titleEl = document.querySelector('[data-clip-title]');
   const creatorEl = document.querySelector('[data-clip-creator]');
+  const embedEl = document.querySelector('[data-embed-code]');
   if (titleEl) titleEl.textContent = clip.title || 'Untitled Clip';
   if (creatorEl) creatorEl.textContent = '@creator';
+  if (embedEl) {
+    const url = clip.visibility === 'unlisted'
+      ? `${location.origin}/clip.html?slug=${clip.clip_slug}&secret=${clip.clip_secret}`
+      : `${location.origin}/clip.html?id=${clip.id}`;
+    embedEl.textContent = `<iframe src=\"${url}\" width=\"640\" height=\"360\" frameborder=\"0\"></iframe>`;
+  }
 };
-
 const hydrateUserReactions = async (clipIds) => {
+  if (!supabase) return;
   const session = await fetchSession();
   if (!session || clipIds.length === 0) return;
 
@@ -327,8 +545,10 @@ const hydrateUserReactions = async (clipIds) => {
 
 const setupClipActions = () => {
   document.addEventListener('click', async (event) => {
+    if (!supabase) return;
     const likeBtn = event.target.closest('[data-action="like"]');
     const saveBtn = event.target.closest('[data-action="save"]');
+    const shareBtn = event.target.closest('[data-action="share"]');
     const card = event.target.closest('[data-clip-id]');
 
     if (likeBtn && card) {
@@ -365,7 +585,20 @@ const setupClipActions = () => {
       }
     }
 
-    if (card && !likeBtn && !saveBtn) {
+    if (shareBtn && card) {
+      event.preventDefault();
+      const clipId = card.getAttribute('data-clip-id');
+      const clip = clipCache.get(clipId);
+      if (clip) {
+        const shareUrl = clip.visibility === 'unlisted'
+          ? `${location.origin}/clip.html?slug=${clip.clip_slug}&secret=${clip.clip_secret}`
+          : `${location.origin}/clip.html?id=${clip.id}`;
+        await navigator.clipboard.writeText(shareUrl);
+        showToast('Link copied');
+      }
+    }
+
+    if (card && !likeBtn && !saveBtn && !shareBtn) {
       const clipId = card.getAttribute('data-clip-id');
       if (clipId) {
         await supabase.from('views').insert({ clip_id: clipId });
@@ -389,6 +622,90 @@ const setupClipActions = () => {
       await supabase.from('clips').update({ visibility: next }).eq('id', clipId);
       if (meta) meta.textContent = `${next} • just now`;
     }
+
+    if (card && event.target.closest('[data-action="pin"]')) {
+      const clipId = card.getAttribute('data-clip-id');
+      await supabase.from('clips').update({ pinned: true }).eq('id', clipId);
+      showToast('Pinned');
+    }
+
+    const dismissBtn = event.target.closest('[data-action="dismiss-report"]');
+    if (dismissBtn) {
+      const reportId = dismissBtn.getAttribute('data-report-id');
+      if (reportId) {
+        await supabase.from('reports').delete().eq('id', reportId);
+        dismissBtn.closest('.list-item')?.remove();
+        showToast('Report dismissed');
+      }
+    }
+
+    if (card && event.target.closest('[data-action="edit"]')) {
+      const clipId = card.getAttribute('data-clip-id');
+      const newTitle = prompt('New title');
+      if (!newTitle) return;
+      await supabase.from('clips').update({ title: newTitle }).eq('id', clipId);
+      const titleEl = card.querySelector('.clip-meta h3');
+      if (titleEl) titleEl.textContent = newTitle;
+      showToast('Title updated');
+    }
+
+    if (card && event.target.closest('[data-action="replace"]')) {
+      const clipId = card.getAttribute('data-clip-id');
+      const file = await selectFile('video/*');
+      if (!file) return;
+      const session = await fetchSession();
+      if (!session) return;
+
+      const fileName = `${session.user.id}/${Date.now()}-${file.name}`;
+      const { error: uploadError } = await supabase.storage.from('clips').upload(fileName, file);
+      if (uploadError) return alert(uploadError.message);
+
+      const { blob, duration } = await createThumbnail(file);
+      let thumbPath = null;
+      if (blob) {
+        const thumbName = `${session.user.id}/${Date.now()}-${file.name}.jpg`;
+        const { error: thumbErr } = await supabase.storage.from('thumbs').upload(thumbName, blob);
+        if (!thumbErr) thumbPath = thumbName;
+      }
+
+      await supabase.from('clips').update({
+        video_path: fileName,
+        thumb_path: thumbPath,
+        duration: `${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, '0')}`,
+        duration_seconds: Math.floor(duration)
+      }).eq('id', clipId);
+
+      if (thumbPath) {
+        const thumb = card.querySelector('.clip-thumb');
+        if (thumb) {
+          thumb.style.backgroundImage = `url('${SUPABASE_URL}/storage/v1/object/public/thumbs/${thumbPath}')`;
+          thumb.style.backgroundSize = 'cover';
+          thumb.style.backgroundPosition = 'center';
+        }
+      }
+      showToast('Video replaced');
+    }
+
+    if (card && event.target.closest('[data-action="thumbnail"]')) {
+      const clipId = card.getAttribute('data-clip-id');
+      const file = await selectFile('image/*');
+      if (!file) return;
+      const session = await fetchSession();
+      if (!session) return;
+
+      const thumbName = `${session.user.id}/${Date.now()}-${file.name}`;
+      const { error: thumbErr } = await supabase.storage.from('thumbs').upload(thumbName, file);
+      if (thumbErr) return alert(thumbErr.message);
+
+      await supabase.from('clips').update({ thumb_path: thumbName }).eq('id', clipId);
+      const thumb = card.querySelector('.clip-thumb');
+      if (thumb) {
+        thumb.style.backgroundImage = `url('${SUPABASE_URL}/storage/v1/object/public/thumbs/${thumbName}')`;
+        thumb.style.backgroundSize = 'cover';
+        thumb.style.backgroundPosition = 'center';
+      }
+      showToast('Thumbnail updated');
+    }
   });
 };
 
@@ -406,8 +723,16 @@ const setupAuthForms = () => {
   if (loginForm) {
     loginForm.addEventListener('submit', async (event) => {
       event.preventDefault();
+      if (!supabase) {
+        setMessage(loginForm, 'Supabase client failed to load. Use GitHub Pages or a local server.', true);
+        return;
+      }
       const email = loginForm.querySelector('[name="email"]').value.trim();
       const password = loginForm.querySelector('[name="password"]').value.trim();
+      if (!email || !password) {
+        setMessage(loginForm, 'Enter your email and password.', true);
+        return;
+      }
       setMessage(loginForm, '');
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
@@ -424,16 +749,38 @@ const setupAuthForms = () => {
   if (signupForm) {
     signupForm.addEventListener('submit', async (event) => {
       event.preventDefault();
+      if (!supabase) {
+        setMessage(signupForm, 'Supabase client failed to load. Use GitHub Pages or a local server.', true);
+        return;
+      }
       const email = signupForm.querySelector('[name="email"]').value.trim();
       const password = signupForm.querySelector('[name="password"]').value.trim();
       const displayName = signupForm.querySelector('[name="display_name"]').value.trim();
-      const username = signupForm.querySelector('[name="username"]').value.trim().replace('@', '');
+      const rawUsername = signupForm.querySelector('[name="username"]').value.trim().replace('@', '');
+      const username = rawUsername.toLowerCase().replace(/[^a-z0-9_]/g, '');
       setMessage(signupForm, '');
+      if (!email || !password || !username) {
+        setMessage(signupForm, 'Email, password, and username are required.', true);
+        return;
+      }
+
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('id')
+        .ilike('username', username)
+        .limit(1);
+      if (existing && existing.length) {
+        setMessage(signupForm, 'Username is already taken.', true);
+        return;
+      }
 
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { display_name: displayName, username } }
+        options: {
+          data: { display_name: displayName, username },
+          emailRedirectTo: AUTH_REDIRECT
+        }
       });
 
       if (error) {
@@ -441,12 +788,13 @@ const setupAuthForms = () => {
         return;
       }
 
-      if (data.user) {
-        await supabase.from('profiles').insert({
-          id: data.user.id,
-          username,
-          display_name: displayName
-        });
+      if (data.session) {
+        await supabase.from('profiles').upsert(
+          { id: data.user.id, username, display_name: displayName },
+          { onConflict: 'id' }
+        );
+        window.location.href = 'dashboard.html';
+        return;
       }
 
       setMessage(signupForm, 'Check your email to confirm your account, then log in.');
@@ -454,12 +802,24 @@ const setupAuthForms = () => {
   }
 };
 
-const randomSecret = () => Math.random().toString(36).slice(2, 10);
-
 const setupUpload = () => {
   const uploadForm = document.querySelector('[data-upload-form]');
   const fileInput = document.querySelector('[data-upload-file]');
-  if (!uploadForm || !fileInput) return;
+  const progressBar = document.querySelector('[data-upload-progress]');
+  const statusText = document.querySelector('[data-upload-status]');
+  if (!uploadForm || !fileInput || !supabase) return;
+
+  fetchSession().then(async (session) => {
+    if (!session) return;
+    const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+    if (!profile) return;
+    const visibilityRadio = uploadForm.querySelector(`[name=\"visibility\"][value=\"${profile.default_visibility}\"]`);
+    if (visibilityRadio) visibilityRadio.checked = true;
+    const allowDownloads = uploadForm.querySelector('[name=\"allow_downloads\"]');
+    const allowEmbed = uploadForm.querySelector('[name=\"allow_embed\"]');
+    if (allowDownloads) allowDownloads.checked = Boolean(profile.default_allow_downloads);
+    if (allowEmbed) allowEmbed.checked = Boolean(profile.default_allow_embed);
+  });
 
   uploadForm.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -469,15 +829,35 @@ const setupUpload = () => {
     const file = fileInput.files[0];
     if (!file) return alert('Select a video file.');
 
-    const title = uploadForm.querySelector('[name="title"]').value;
-    const description = uploadForm.querySelector('[name="description"]').value;
+    const title = uploadForm.querySelector('[name="title"]').value.trim();
+    const description = uploadForm.querySelector('[name="description"]').value.trim();
     const visibility = uploadForm.querySelector('[name="visibility"]:checked')?.value || 'public';
     const tagsRaw = uploadForm.querySelector('[name="tags"]').value;
     const tags = tagsRaw.split(',').map((t) => t.trim().replace(/^#/, '')).filter(Boolean);
+    const allowDownloads = uploadForm.querySelector('[name="allow_downloads"]').checked;
+    const allowEmbed = uploadForm.querySelector('[name="allow_embed"]').checked;
+    const contentWarning = uploadForm.querySelector('[name="content_warning"]').checked;
+
+    if (statusText) statusText.textContent = 'Uploading...';
+    if (progressBar) progressBar.style.width = '20%';
 
     const fileName = `${session.user.id}/${Date.now()}-${file.name}`;
     const { error: uploadError } = await supabase.storage.from('clips').upload(fileName, file);
     if (uploadError) return alert(uploadError.message);
+
+    if (progressBar) progressBar.style.width = '60%';
+    if (statusText) statusText.textContent = 'Generating thumbnail...';
+
+    const { blob, duration } = await createThumbnail(file);
+    let thumbPath = null;
+    if (blob) {
+      const thumbName = `${session.user.id}/${Date.now()}-${file.name}.jpg`;
+      const { error: thumbErr } = await supabase.storage.from('thumbs').upload(thumbName, blob);
+      if (!thumbErr) thumbPath = thumbName;
+    }
+
+    if (progressBar) progressBar.style.width = '80%';
+    if (statusText) statusText.textContent = 'Publishing...';
 
     const slug = `${title}`.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const clipSecret = randomSecret();
@@ -488,28 +868,33 @@ const setupUpload = () => {
       description,
       visibility,
       video_path: fileName,
+      thumb_path: thumbPath,
+      duration: `${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, '0')}`,
+      duration_seconds: Math.floor(duration),
+      allow_downloads: allowDownloads,
+      allow_embed: allowEmbed,
+      content_warning: contentWarning,
       clip_slug: slug || `${session.user.id}-${Date.now()}`,
       clip_secret: clipSecret
     }).select().single();
 
     if (clipError) return alert(clipError.message);
 
-    if (tags.length) {
-      for (const tag of tags) {
-        const { data: tagRow } = await supabase.from('tags').upsert({ name: tag }).select().single();
-        if (tagRow) {
-          await supabase.from('clip_tags').insert({ clip_id: clipData.id, tag_id: tagRow.id });
-        }
+    for (const tag of tags) {
+      const { data: tagRow } = await supabase.from('tags').upsert({ name: tag }).select().single();
+      if (tagRow) {
+        await supabase.from('clip_tags').insert({ clip_id: clipData.id, tag_id: tagRow.id });
       }
     }
 
+    if (progressBar) progressBar.style.width = '100%';
+    if (statusText) statusText.textContent = 'Published.';
     window.location.href = 'dashboard.html';
   });
 };
-
 const hydrateFollows = async () => {
   const session = await fetchSession();
-  if (!session) return;
+  if (!session || !supabase) return;
 
   const buttons = Array.from(document.querySelectorAll('[data-follow-id]'))
     .filter((btn) => btn.getAttribute('data-follow-id'));
@@ -535,6 +920,7 @@ const hydrateFollows = async () => {
 
 const setupFollowButtons = () => {
   document.addEventListener('click', async (event) => {
+    if (!supabase) return;
     const followBtn = event.target.closest('[data-follow-id]');
     if (!followBtn) return;
     const targetId = followBtn.getAttribute('data-follow-id');
@@ -569,7 +955,8 @@ const hydrateModal = (clipId) => {
   const titleEl = document.querySelector('[data-modal-title]');
   const tagsEl = document.querySelector('[data-modal-tags]');
   const creatorEl = document.querySelector('[data-modal-creator]');
-  const followBtn = document.querySelector('[data-follow-id]');
+  const followBtn = document.querySelector('.modal [data-follow-id]');
+  const downloadBtn = document.querySelector('[data-modal-download]');
 
   if (titleEl) titleEl.textContent = clip.title || 'Untitled Clip';
   if (creatorEl) creatorEl.textContent = `@${clip.profiles?.username || 'creator'}`;
@@ -578,34 +965,243 @@ const hydrateModal = (clipId) => {
     tagsEl.innerHTML = tags.map((tag) => `<span class="tag">#${tag}</span>`).join('');
   }
   if (followBtn) followBtn.setAttribute('data-follow-id', clip.profiles?.id || '');
+  if (downloadBtn) downloadBtn.style.display = clip.allow_downloads ? 'inline-flex' : 'none';
+};
+
+const setupModalActions = () => {
+  document.addEventListener('click', async (event) => {
+    const copyBtn = event.target.closest('[data-modal-copy]');
+    const downloadBtn = event.target.closest('[data-modal-download]');
+    const reportBtn = event.target.closest('[data-modal-report]');
+    const likeBtn = event.target.closest('[data-modal-like]');
+    const saveBtn = event.target.closest('[data-modal-save]');
+    const openCard = event.target.closest('[data-clip-id]');
+
+    if (openCard) {
+      currentClipId = openCard.getAttribute('data-clip-id');
+      hydrateModal(currentClipId);
+    }
+
+    const activeClipId = currentClipId || openCard?.getAttribute('data-clip-id');
+    if (copyBtn && activeClipId) {
+      const clip = clipCache.get(activeClipId);
+      if (!clip) return;
+      const shareUrl = clip.visibility === 'unlisted'
+        ? `${location.origin}/clip.html?slug=${clip.clip_slug}&secret=${clip.clip_secret}`
+        : `${location.origin}/clip.html?id=${clip.id}`;
+      await navigator.clipboard.writeText(shareUrl);
+      showToast('Link copied');
+    }
+
+    if (downloadBtn && activeClipId) {
+      const clip = clipCache.get(activeClipId);
+      if (!clip) return;
+      const url = `${SUPABASE_URL}/storage/v1/object/public/clips/${clip.video_path}`;
+      window.open(url, '_blank');
+    }
+
+    if (reportBtn && activeClipId) {
+      if (!supabase) return;
+      const session = await fetchSession();
+      if (!session) return alert('Please log in to report clips.');
+      const reason = prompt('Reason for report?');
+      if (!reason) return;
+      await supabase.from('reports').insert({ reporter_id: session.user.id, clip_id: activeClipId, reason });
+      showToast('Report submitted');
+    }
+
+    if ((likeBtn || saveBtn) && activeClipId) {
+      document.querySelector(`[data-clip-id="${activeClipId}"] ${likeBtn ? '[data-action="like"]' : '[data-action="save"]'}`)?.click();
+    }
+  });
+};
+
+const setupDashboardTabs = () => {
+  const tabs = document.querySelectorAll('[data-dashboard-tabs] .tab');
+  const panels = document.querySelectorAll('[data-tab-panel]');
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      tabs.forEach((t) => t.classList.remove('active'));
+      tab.classList.add('active');
+      const target = tab.dataset.tab;
+      panels.forEach((panel) => {
+        panel.style.display = panel.dataset.tabPanel === target ? '' : 'none';
+      });
+      if (target === 'collections') loadCollections();
+      if (target === 'saved') loadSaved();
+    });
+  });
+};
+
+const setupDashboardActions = () => {
+  document.addEventListener('click', (event) => {
+    const uploadBtn = event.target.closest('[data-action="upload-new"]');
+    const collectionBtn = event.target.closest('[data-action="new-collection"]');
+    if (uploadBtn) window.location.href = 'upload.html';
+    if (collectionBtn) createCollection();
+  });
+};
+
+const createCollection = async () => {
+  if (!supabase) return;
+  const session = await fetchSession();
+  if (!session) return alert('Please log in.');
+  const title = prompt('Collection title');
+  if (!title) return;
+  await supabase.from('collections').insert({ user_id: session.user.id, title, visibility: 'private' });
+  showToast('Collection created');
+  loadCollections();
+};
+
+const setupSettings = async () => {
+  if (!supabase || page !== 'settings') return;
+  const session = await fetchSession();
+  if (!session) return;
+
+  const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+  const settingInputs = document.querySelectorAll('[data-setting]');
+  settingInputs.forEach((input) => {
+    const key = input.dataset.setting;
+    if (!key || !profile) return;
+    if (key === 'default_visibility') {
+      input.checked = profile.default_visibility === 'public';
+    } else if (key === 'default_speed') {
+      input.checked = (profile.default_speed || 1) > 1;
+    } else {
+      input.checked = Boolean(profile[key]);
+    }
+  });
+
+  settingInputs.forEach((input) => {
+    input.addEventListener('change', async () => {
+      const key = input.dataset.setting;
+      if (!key) return;
+      let value;
+      if (key === 'default_visibility') {
+        value = input.checked ? 'public' : 'private';
+      } else if (key === 'default_speed') {
+        value = input.checked ? 1.25 : 1.0;
+      } else {
+        value = input.checked;
+      }
+      await supabase.from('profiles').update({ [key]: value }).eq('id', session.user.id);
+      showToast('Settings updated');
+    });
+  });
+
+  document.addEventListener('click', async (event) => {
+    const btn = event.target.closest('[data-action]');
+    if (!btn) return;
+    const action = btn.dataset.action;
+
+    if (action === 'display-name') {
+      const value = prompt('New display name');
+      if (!value) return;
+      await supabase.from('profiles').update({ display_name: value }).eq('id', session.user.id);
+      showToast('Display name updated');
+    }
+
+    if (action === 'username') {
+      const value = prompt('New username');
+      if (!value) return;
+      await supabase.from('profiles').update({ username: value.replace('@', '') }).eq('id', session.user.id);
+      showToast('Username updated');
+    }
+
+    if (action === 'email') {
+      const value = prompt('New email');
+      if (!value) return;
+      await supabase.auth.updateUser({ email: value });
+      showToast('Email update requested. Check your inbox.');
+    }
+
+    if (action === 'reset-password') {
+      const value = prompt('Email for password reset');
+      if (!value) return;
+      await supabase.auth.resetPasswordForEmail(value, { redirectTo: AUTH_REDIRECT });
+      showToast('Password reset email sent');
+    }
+
+    if (action === 'signout') {
+      await supabase.auth.signOut({ scope: 'global' });
+      window.location.href = 'index.html';
+    }
+
+    if (action === 'export') {
+      showToast('Export requested');
+    }
+
+    if (action === 'delete-account') {
+      alert('Delete account requires admin privileges in Supabase.');
+    }
+  });
+};
+
+const setupCollectionsPage = () => {
+  if (page === 'collections') loadCollections();
+};
+
+const setupFollowingPage = () => {
+  if (page === 'following') loadFollowing();
+};
+
+const loadAdmin = async () => {
+  if (!supabase || page !== 'admin') return;
+  const list = document.querySelector('[data-admin-reports]');
+  if (!list) return;
+  const session = await fetchSession();
+  if (!session) return;
+
+  const { data } = await supabase
+    .from('reports')
+    .select('id,reason,created_at,clip_id,reported_user_id')
+    .order('created_at', { ascending: false });
+
+  list.innerHTML = (data || []).map((rep) => `
+    <div class="list-item">
+      <div>
+        <strong>Report ${rep.clip_id ? `Clip` : 'User'}</strong>
+        <div class="footer-note">Reason: ${rep.reason} • ${formatTimeAgo(rep.created_at)}</div>
+      </div>
+      <div class="tag-row">
+        <button class="button-secondary" data-action="dismiss-report" data-report-id="${rep.id}">Dismiss</button>
+      </div>
+    </div>
+  `).join('');
 };
 
 const bootstrap = async () => {
   if (!supabase) {
-    alert('Supabase client failed to load. Open DevTools console for errors.');
+    alert('Supabase client failed to load. Check your GitHub Pages URL config.');
     return;
   }
+
   await fetchSession();
+  document.body.setAttribute('data-auth-ready', 'true');
   setupAuthForms();
   setupUpload();
   setupClipActions();
+  setupModalActions();
   setupFollowButtons();
-  await hydrateFollows();
+  setupDashboardTabs();
+  setupDashboardActions();
+  setupSettings();
 
   if (page === 'explore') {
     setupExploreFilters();
     await loadExplore();
   }
-  if (page === 'dashboard') await loadDashboard();
+  if (page === 'dashboard') {
+    await loadDashboard();
+  }
   if (page === 'profile') await loadProfile();
-  await loadClipPage();
-
-  document.addEventListener('click', (event) => {
-    const card = event.target.closest('[data-clip-id]');
-    if (card) {
-      hydrateModal(card.getAttribute('data-clip-id'));
-    }
-  });
+  if (page === 'tag') await loadTagPage();
+  if (page === 'clip') await loadClipPage();
+  setupCollectionsPage();
+  setupFollowingPage();
+  await loadAdmin();
+  await hydrateFollows();
 };
 
 bootstrap();
+

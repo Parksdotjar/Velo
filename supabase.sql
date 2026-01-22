@@ -10,8 +10,70 @@ create table if not exists profiles (
   display_name text,
   avatar_url text,
   bio text,
+  default_visibility text default 'public',
+  default_allow_downloads boolean default true,
+  default_allow_embed boolean default true,
+  hide_likes boolean default false,
+  hide_saves boolean default false,
+  profile_visible boolean default true,
+  autoplay_previews boolean default false,
+  default_muted boolean default true,
+  default_speed numeric default 1.0,
   created_at timestamptz default now()
 );
+
+alter table profiles add column if not exists default_visibility text default 'public';
+alter table profiles add column if not exists default_allow_downloads boolean default true;
+alter table profiles add column if not exists default_allow_embed boolean default true;
+alter table profiles add column if not exists hide_likes boolean default false;
+alter table profiles add column if not exists hide_saves boolean default false;
+alter table profiles add column if not exists profile_visible boolean default true;
+alter table profiles add column if not exists autoplay_previews boolean default false;
+alter table profiles add column if not exists default_muted boolean default true;
+alter table profiles add column if not exists default_speed numeric default 1.0;
+
+-- Auto-create profile on auth sign-up
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  base_username text;
+  final_username text;
+begin
+  base_username := lower(regexp_replace(
+    coalesce(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)),
+    '[^a-z0-9_]+',
+    '',
+    'g'
+  ));
+  if base_username is null or base_username = '' then
+    base_username := 'user';
+  end if;
+  final_username := base_username;
+  if exists (select 1 from profiles where username = final_username) then
+    final_username := base_username || '_' || substr(new.id::text, 1, 6);
+  end if;
+
+  insert into public.profiles (id, username, display_name)
+  values (
+    new.id,
+    final_username,
+    coalesce(new.raw_user_meta_data->>'display_name', base_username)
+  )
+  on conflict (id) do update
+    set username = excluded.username,
+        display_name = excluded.display_name;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+after insert on auth.users
+for each row execute procedure public.handle_new_user();
 
 -- Clips
 create table if not exists clips (
@@ -24,6 +86,10 @@ create table if not exists clips (
   thumb_path text,
   duration text,
   duration_seconds integer,
+  allow_downloads boolean default true,
+  allow_embed boolean default true,
+  content_warning boolean default false,
+  pinned boolean default false,
   clip_slug text unique,
   clip_secret text,
   created_at timestamptz default now(),
@@ -31,6 +97,14 @@ create table if not exists clips (
   likes_count integer default 0,
   saves_count integer default 0
 );
+
+alter table clips add column if not exists duration_seconds integer;
+alter table clips add column if not exists allow_downloads boolean default true;
+alter table clips add column if not exists allow_embed boolean default true;
+alter table clips add column if not exists content_warning boolean default false;
+alter table clips add column if not exists pinned boolean default false;
+alter table clips add column if not exists clip_slug text;
+alter table clips add column if not exists clip_secret text;
 
 -- Tags
 create table if not exists tags (
@@ -183,6 +257,7 @@ create index if not exists clips_visibility_idx on clips(visibility);
 create index if not exists clip_tags_tag_id_idx on clip_tags(tag_id);
 create index if not exists likes_user_id_idx on likes(user_id);
 create index if not exists saves_user_id_idx on saves(user_id);
+create unique index if not exists clips_slug_idx on clips(clip_slug);
 
 -- RLS
 alter table profiles enable row level security;
@@ -281,6 +356,9 @@ create policy "Views are insertable" on views
 -- Reports policies
 create policy "Reports are insertable" on reports
   for insert with check (auth.uid() = reporter_id);
+
+create policy "Reports are viewable by authenticated users" on reports
+  for select using (auth.uid() is not null);
 
 -- Collections policies
 create policy "Collections are viewable if public or owner" on collections

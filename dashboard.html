@@ -6,7 +6,7 @@
   <title>VELO | Dashboard</title>  <meta name="color-scheme" content="dark" />  <style>html, body { background: #000000; color: #ffffff; }</style>
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body data-auth="logged-in" data-stagger="on" data-page="dashboard">
+<body data-auth="logged-out" data-stagger="on" data-page="dashboard">
   <nav class="navbar">
     <div class="nav-section">
       <a class="brand" href="index.html">
@@ -39,11 +39,11 @@
           <p>Manage your clips, collections, and saved content.</p>
         </div>
         <div class="tag-row">
-          <button class="button-primary">
+          <button class="button-primary" data-action="upload-new">
             <svg class="icon"><use href="sprite.svg#icon-upload"></use></svg>
             Upload New
           </button>
-          <button class="button-secondary">
+          <button class="button-secondary" data-action="new-collection">
             <svg class="icon"><use href="sprite.svg#icon-grid"></use></svg>
             New Collection
           </button>
@@ -52,32 +52,32 @@
 
       <section class="stat-grid">
         <div class="stat-card">
-          <h3>42</h3>
+          <h3 data-stat-uploads>0</h3>
           <span>Uploads</span>
         </div>
         <div class="stat-card">
-          <h3>128k</h3>
+          <h3 data-stat-views>0</h3>
           <span>Views</span>
         </div>
         <div class="stat-card">
-          <h3>9.4k</h3>
+          <h3 data-stat-likes>0</h3>
           <span>Likes</span>
         </div>
         <div class="stat-card">
-          <h3>3.1k</h3>
+          <h3 data-stat-saves>0</h3>
           <span>Saved by others</span>
         </div>
         <div class="stat-card">
-          <h3>18.6 GB</h3>
+          <h3 data-stat-storage>0 GB</h3>
           <span>Storage used</span>
         </div>
       </section>
 
-      <div class="tabs">
-        <button class="tab active">Your Clips</button>
-        <button class="tab">Collections</button>
-        <button class="tab">Saved</button>
-        <button class="tab">Analytics</button>
+      <div class="tabs" data-dashboard-tabs>
+        <button class="tab active" data-tab="clips">Your Clips</button>
+        <button class="tab" data-tab="collections">Collections</button>
+        <button class="tab" data-tab="saved">Saved</button>
+        <button class="tab" data-tab="analytics">Analytics</button>
       </div>
 
       <div class="tag-row" style="justify-content: space-between;">
@@ -88,12 +88,18 @@
         <button class="button-secondary">Sort: Latest</button>
       </div>
 
-      <section class="grid cols-3" data-dashboard-grid></section>
+      <section class="grid cols-3" data-tab-panel="clips" data-dashboard-grid></section>
+      <section class="grid cols-3" data-tab-panel="collections" data-collections-grid style="display:none;"></section>
+      <section class="grid cols-3" data-tab-panel="saved" data-saved-grid style="display:none;"></section>
+      <section class="panel" data-tab-panel="analytics" style="display:none; padding: 16px;">
+        <div class="skeleton lg"></div>
+      </section>
     </div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>  <script src="supabase.js" defer></script>  <script src="app.js" defer></script>
 </body>
 </html>
+
 
 

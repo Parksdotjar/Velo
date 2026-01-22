@@ -6,7 +6,7 @@
   <title>VELO | Collections</title>  <meta name="color-scheme" content="dark" />  <style>html, body { background: #000000; color: #ffffff; }</style>
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body data-auth="logged-in" data-stagger="on" data-page="collections">
+<body data-auth="logged-out" data-stagger="on" data-page="collections">
   <nav class="navbar">
     <div class="nav-section">
       <a class="brand" href="index.html">
@@ -41,12 +41,13 @@
         <button class="button-primary">New Collection</button>
       </section>
 
-      <section class="grid cols-3"></section>
+      <section class="grid cols-3" data-collections-grid></section>
     </div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>  <script src="supabase.js" defer></script>  <script src="app.js" defer></script>
 </body>
 </html>
+
 
 
