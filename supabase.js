@@ -1,10 +1,8 @@
-﻿
+
 const SUPABASE_URL = 'https://juagusbfswxcwenzegfg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1YWd1c2Jmc3d4Y3dlbnplZ2ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMzk5NzksImV4cCI6MjA4NDYxNTk3OX0.fe76LO6mVP9Okqj9JNhr2EQF7mx-o6F95QrEIOz8yaw';
 
-const supabase = window.supabase?.createClient
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
+const supabaseClient = window.supabase?.createClient ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 const page = document.body.getAttribute('data-page');
 const getBaseUrl = () => {
@@ -17,6 +15,36 @@ const isUnsupportedOrigin = () => {
   if (location.protocol === 'file:') return true;
   if (location.hostname.endsWith('github.com')) return true;
   return false;
+};
+const debugState = { banner: null };
+
+const setDebugStatus = (key, ok, text) => {
+  const el = debugState.banner?.querySelector(`[data-debug="${key}"]`);
+  if (!el) return;
+  el.textContent = text;
+  el.classList.remove('ok', 'bad');
+  el.classList.add(ok ? 'ok' : 'bad');
+};
+
+const initDebugBanner = () => {
+  if (!document.body) return;
+  const banner = document.createElement('div');
+  banner.className = 'debug-banner';
+  banner.innerHTML = `
+    <div><strong>VELO Debug</strong></div>
+    <div class="debug-row"><span>Origin</span><span class="debug-status" data-debug="origin"></span></div>
+    <div class="debug-row"><span>Supabase CDN</span><span class="debug-status" data-debug="cdn"></span></div>
+    <div class="debug-row"><span>Supabase Client</span><span class="debug-status" data-debug="client"></span></div>
+    <div class="debug-row"><span>Auth State</span><span class="debug-status" data-debug="auth"></span></div>
+  `;
+  document.body.appendChild(banner);
+  debugState.banner = banner;
+
+  const originOk = !isUnsupportedOrigin();
+  setDebugStatus('origin', originOk, originOk ? window.location.origin : 'invalid origin');
+  setDebugStatus('cdn', Boolean(window.supabase?.createClient), window.supabase?.createClient ? 'loaded' : 'missing');
+  setDebugStatus('client', Boolean(supabaseClient), supabaseClient ? 'ready' : 'null');
+  setDebugStatus('auth', false, 'unknown');
 };
 
 const showToast = (message) => {
@@ -31,17 +59,18 @@ const showToast = (message) => {
 
 const setAuthState = (session) => {
   document.body.setAttribute('data-auth', session ? 'logged-in' : 'logged-out');
+  setDebugStatus('auth', Boolean(session), session ? 'logged-in' : 'logged-out');
 };
 
 const fetchSession = async () => {
-  if (!supabase) return null;
-  const { data } = await supabase.auth.getSession();
+  if (!supabaseClient) return null;
+  const { data } = await supabaseClient.auth.getSession();
   setAuthState(data.session);
   return data.session;
 };
 
-if (supabase) {
-  supabase.auth.onAuthStateChange((_event, session) => {
+if (supabaseClient) {
+  supabaseClient.auth.onAuthStateChange((_event, session) => {
     setAuthState(session);
     if (session) {
       const profileLink = document.querySelector('a[aria-label="Profile"]');
@@ -116,7 +145,7 @@ const buildClipCard = (clip) => {
       </div>
       <div class="clip-meta">
         <h3>${clip.title || 'Untitled Clip'}</h3>
-        <span>@${creator} • ${time}</span>
+        <span>@${creator} � ${time}</span>
       </div>
       <div class="tag-row">
         ${tags.slice(0, 3).map((tag) => `<span class="tag">#${tag}</span>`).join('')}
@@ -151,7 +180,7 @@ const buildDashboardCard = (clip) => {
       <div class="clip-thumb" style="${thumbUrl ? `background-image: url('${thumbUrl}'); background-size: cover; background-position: center;` : ''}"></div>
       <div class="clip-meta">
         <h3>${clip.title || 'Untitled Clip'}</h3>
-        <span>${clip.visibility} • ${formatTimeAgo(clip.created_at)}</span>
+        <span>${clip.visibility} � ${formatTimeAgo(clip.created_at)}</span>
       </div>
       <div class="tag-row">
         <button class="button-secondary" data-action="edit">Edit</button>
@@ -190,11 +219,11 @@ const parseSearch = (value) => {
 };
 
 const loadExplore = async () => {
-  if (!supabase) return;
+  if (!supabaseClient) return;
   const grid = document.querySelector('[data-clips-grid]');
   if (!grid) return;
 
-  let query = supabase
+  let query = supabaseClient
     .from('clips')
     .select('id,title,created_at,visibility,thumb_path,duration,duration_seconds,likes_count,views_count,allow_downloads,allow_embed,clip_slug,clip_secret,profiles(id,username),clip_tags(tags(name))')
     .eq('visibility', 'public');
@@ -301,13 +330,13 @@ const setupExploreFilters = () => {
   }
 };
 const loadDashboard = async () => {
-  if (!supabase) return;
+  if (!supabaseClient) return;
   const grid = document.querySelector('[data-dashboard-grid]');
   if (!grid) return;
   const session = await fetchSession();
   if (!session) return;
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('clips')
     .select('id,title,created_at,visibility,thumb_path,likes_count,views_count,saves_count,pinned')
     .eq('user_id', session.user.id)
@@ -344,13 +373,13 @@ const loadDashboard = async () => {
 };
 
 const loadSaved = async () => {
-  if (!supabase) return;
+  if (!supabaseClient) return;
   const grid = document.querySelector('[data-saved-grid]');
   if (!grid) return;
   const session = await fetchSession();
   if (!session) return;
 
-  const { data } = await supabase
+  const { data } = await supabaseClient
     .from('saves')
     .select('clip_id, clips (id,title,created_at,visibility,thumb_path,duration,likes_count,views_count,profiles(id,username),clip_tags(tags(name)))')
     .eq('user_id', session.user.id);
@@ -360,12 +389,12 @@ const loadSaved = async () => {
 };
 
 const loadCollections = async () => {
-  if (!supabase) return;
+  if (!supabaseClient) return;
   const grid = document.querySelector('[data-collections-grid]');
   if (!grid) return;
   const session = await fetchSession();
 
-  let query = supabase.from('collections').select('*').order('created_at', { ascending: false });
+  let query = supabaseClient.from('collections').select('*').order('created_at', { ascending: false });
   if (session) query = query.eq('user_id', session.user.id);
   else query = query.eq('visibility', 'public');
 
@@ -375,20 +404,20 @@ const loadCollections = async () => {
       <div class="clip-thumb"></div>
       <div class="clip-meta">
         <h3>${col.title}</h3>
-        <span>${col.visibility} • ${formatTimeAgo(col.created_at)}</span>
+        <span>${col.visibility} � ${formatTimeAgo(col.created_at)}</span>
       </div>
     </article>
   `).join('');
 };
 
 const loadFollowing = async () => {
-  if (!supabase) return;
+  if (!supabaseClient) return;
   const grid = document.querySelector('[data-following-grid]');
   if (!grid) return;
   const session = await fetchSession();
   if (!session) return;
 
-  const { data: follows } = await supabase
+  const { data: follows } = await supabaseClient
     .from('follows')
     .select('following_id')
     .eq('follower_id', session.user.id);
@@ -399,7 +428,7 @@ const loadFollowing = async () => {
     return;
   }
 
-  const { data } = await supabase
+  const { data } = await supabaseClient
     .from('clips')
     .select('id,title,created_at,visibility,thumb_path,duration,likes_count,views_count,profiles(id,username),clip_tags(tags(name))')
     .in('user_id', ids)
@@ -410,7 +439,7 @@ const loadFollowing = async () => {
 };
 
 const loadTagPage = async () => {
-  if (!supabase || page !== 'tag') return;
+  if (!supabaseClient || page !== 'tag') return;
   const grid = document.querySelector('[data-tag-grid]');
   const title = document.querySelector('[data-tag-title]');
   const subtitle = document.querySelector('[data-tag-subtitle]');
@@ -420,7 +449,7 @@ const loadTagPage = async () => {
 
   if (title) title.textContent = `#${tag}`;
 
-  const { data } = await supabase
+  const { data } = await supabaseClient
     .from('clips')
     .select('id,title,created_at,visibility,thumb_path,duration,likes_count,views_count,profiles(id,username),clip_tags(tags(name))')
     .eq('visibility', 'public');
@@ -434,7 +463,7 @@ const loadTagPage = async () => {
 };
 
 const loadProfile = async () => {
-  if (!supabase || page !== 'profile') return;
+  if (!supabaseClient || page !== 'profile') return;
   const grid = document.querySelector('[data-profile-grid]');
   const nameEl = document.querySelector('[data-profile-name]');
   const userEl = document.querySelector('[data-profile-username]');
@@ -449,8 +478,8 @@ const loadProfile = async () => {
   if (!username && !userId) return;
 
   const profileQuery = userId
-    ? supabase.from('profiles').select('*').eq('id', userId).single()
-    : supabase.from('profiles').select('*').eq('username', username).single();
+    ? supabaseClient.from('profiles').select('*').eq('id', userId).single()
+    : supabaseClient.from('profiles').select('*').eq('username', username).single();
 
   const { data: profile } = await profileQuery;
   if (!profile) return;
@@ -474,7 +503,7 @@ const loadProfile = async () => {
   if (followBtn) followBtn.setAttribute('data-follow-id', profile.id);
 
   if (grid) {
-    const { data: clips } = await supabase
+    const { data: clips } = await supabaseClient
       .from('clips')
       .select('id,title,created_at,visibility,thumb_path,duration,likes_count,views_count,profiles(id,username),clip_tags(tags(name))')
       .eq('user_id', profile.id)
@@ -486,7 +515,7 @@ const loadProfile = async () => {
 };
 
 const loadClipPage = async () => {
-  if (!supabase || page !== 'clip') return;
+  if (!supabaseClient || page !== 'clip') return;
   const params = new URLSearchParams(window.location.search);
   const slug = params.get('slug');
   const secret = params.get('secret');
@@ -494,10 +523,10 @@ const loadClipPage = async () => {
 
   let clip;
   if (slug && secret) {
-    const { data } = await supabase.rpc('get_unlisted_clip', { p_slug: slug, p_secret: secret });
+    const { data } = await supabaseClient.rpc('get_unlisted_clip', { p_slug: slug, p_secret: secret });
     clip = data?.[0];
   } else if (id) {
-    const { data } = await supabase.from('clips').select('*').eq('id', id).single();
+    const { data } = await supabaseClient.from('clips').select('*').eq('id', id).single();
     clip = data;
   }
 
@@ -516,17 +545,17 @@ const loadClipPage = async () => {
   }
 };
 const hydrateUserReactions = async (clipIds) => {
-  if (!supabase) return;
+  if (!supabaseClient) return;
   const session = await fetchSession();
   if (!session || clipIds.length === 0) return;
 
-  const { data: liked } = await supabase
+  const { data: liked } = await supabaseClient
     .from('likes')
     .select('clip_id')
     .in('clip_id', clipIds)
     .eq('user_id', session.user.id);
 
-  const { data: saved } = await supabase
+  const { data: saved } = await supabaseClient
     .from('saves')
     .select('clip_id')
     .in('clip_id', clipIds)
@@ -550,7 +579,7 @@ const hydrateUserReactions = async (clipIds) => {
 
 const setupClipActions = () => {
   document.addEventListener('click', async (event) => {
-    if (!supabase) return;
+    if (!supabaseClient) return;
     const likeBtn = event.target.closest('[data-action="like"]');
     const saveBtn = event.target.closest('[data-action="save"]');
     const shareBtn = event.target.closest('[data-action="share"]');
@@ -565,11 +594,11 @@ const setupClipActions = () => {
       const countEl = card.querySelector('.like-count');
       const currentCount = countEl ? Number(countEl.textContent) : 0;
       if (isActive) {
-        await supabase.from('likes').delete().eq('clip_id', clipId).eq('user_id', session.user.id);
+        await supabaseClient.from('likes').delete().eq('clip_id', clipId).eq('user_id', session.user.id);
         likeBtn.setAttribute('aria-pressed', 'false');
         if (countEl) countEl.textContent = Math.max(0, currentCount - 1);
       } else {
-        await supabase.from('likes').insert({ clip_id: clipId, user_id: session.user.id });
+        await supabaseClient.from('likes').insert({ clip_id: clipId, user_id: session.user.id });
         likeBtn.setAttribute('aria-pressed', 'true');
         if (countEl) countEl.textContent = currentCount + 1;
       }
@@ -582,10 +611,10 @@ const setupClipActions = () => {
       const clipId = card.getAttribute('data-clip-id');
       const isActive = saveBtn.getAttribute('aria-pressed') === 'true';
       if (isActive) {
-        await supabase.from('saves').delete().eq('clip_id', clipId).eq('user_id', session.user.id);
+        await supabaseClient.from('saves').delete().eq('clip_id', clipId).eq('user_id', session.user.id);
         saveBtn.setAttribute('aria-pressed', 'false');
       } else {
-        await supabase.from('saves').insert({ clip_id: clipId, user_id: session.user.id });
+        await supabaseClient.from('saves').insert({ clip_id: clipId, user_id: session.user.id });
         saveBtn.setAttribute('aria-pressed', 'true');
       }
     }
@@ -606,7 +635,7 @@ const setupClipActions = () => {
     if (card && !likeBtn && !saveBtn && !shareBtn) {
       const clipId = card.getAttribute('data-clip-id');
       if (clipId) {
-        await supabase.from('views').insert({ clip_id: clipId });
+        await supabaseClient.from('views').insert({ clip_id: clipId });
       }
     }
 
@@ -614,7 +643,7 @@ const setupClipActions = () => {
       const clipId = card.getAttribute('data-clip-id');
       if (!clipId) return;
       if (!confirm('Delete this clip?')) return;
-      await supabase.from('clips').delete().eq('id', clipId);
+      await supabaseClient.from('clips').delete().eq('id', clipId);
       card.remove();
     }
 
@@ -622,15 +651,15 @@ const setupClipActions = () => {
       const clipId = card.getAttribute('data-clip-id');
       if (!clipId) return;
       const meta = card.querySelector('.clip-meta span');
-      const current = meta?.textContent?.split(' • ')[0] || 'public';
+      const current = meta?.textContent?.split(' � ')[0] || 'public';
       const next = current === 'public' ? 'unlisted' : current === 'unlisted' ? 'private' : 'public';
-      await supabase.from('clips').update({ visibility: next }).eq('id', clipId);
-      if (meta) meta.textContent = `${next} • just now`;
+      await supabaseClient.from('clips').update({ visibility: next }).eq('id', clipId);
+      if (meta) meta.textContent = `${next} � just now`;
     }
 
     if (card && event.target.closest('[data-action="pin"]')) {
       const clipId = card.getAttribute('data-clip-id');
-      await supabase.from('clips').update({ pinned: true }).eq('id', clipId);
+      await supabaseClient.from('clips').update({ pinned: true }).eq('id', clipId);
       showToast('Pinned');
     }
 
@@ -638,7 +667,7 @@ const setupClipActions = () => {
     if (dismissBtn) {
       const reportId = dismissBtn.getAttribute('data-report-id');
       if (reportId) {
-        await supabase.from('reports').delete().eq('id', reportId);
+        await supabaseClient.from('reports').delete().eq('id', reportId);
         dismissBtn.closest('.list-item')?.remove();
         showToast('Report dismissed');
       }
@@ -648,7 +677,7 @@ const setupClipActions = () => {
       const clipId = card.getAttribute('data-clip-id');
       const newTitle = prompt('New title');
       if (!newTitle) return;
-      await supabase.from('clips').update({ title: newTitle }).eq('id', clipId);
+      await supabaseClient.from('clips').update({ title: newTitle }).eq('id', clipId);
       const titleEl = card.querySelector('.clip-meta h3');
       if (titleEl) titleEl.textContent = newTitle;
       showToast('Title updated');
@@ -662,18 +691,18 @@ const setupClipActions = () => {
       if (!session) return;
 
       const fileName = `${session.user.id}/${Date.now()}-${file.name}`;
-      const { error: uploadError } = await supabase.storage.from('clips').upload(fileName, file);
+      const { error: uploadError } = await supabaseClient.storage.from('clips').upload(fileName, file);
       if (uploadError) return alert(uploadError.message);
 
       const { blob, duration } = await createThumbnail(file);
       let thumbPath = null;
       if (blob) {
         const thumbName = `${session.user.id}/${Date.now()}-${file.name}.jpg`;
-        const { error: thumbErr } = await supabase.storage.from('thumbs').upload(thumbName, blob);
+        const { error: thumbErr } = await supabaseClient.storage.from('thumbs').upload(thumbName, blob);
         if (!thumbErr) thumbPath = thumbName;
       }
 
-      await supabase.from('clips').update({
+      await supabaseClient.from('clips').update({
         video_path: fileName,
         thumb_path: thumbPath,
         duration: `${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, '0')}`,
@@ -699,10 +728,10 @@ const setupClipActions = () => {
       if (!session) return;
 
       const thumbName = `${session.user.id}/${Date.now()}-${file.name}`;
-      const { error: thumbErr } = await supabase.storage.from('thumbs').upload(thumbName, file);
+      const { error: thumbErr } = await supabaseClient.storage.from('thumbs').upload(thumbName, file);
       if (thumbErr) return alert(thumbErr.message);
 
-      await supabase.from('clips').update({ thumb_path: thumbName }).eq('id', clipId);
+      await supabaseClient.from('clips').update({ thumb_path: thumbName }).eq('id', clipId);
       const thumb = card.querySelector('.clip-thumb');
       if (thumb) {
         thumb.style.backgroundImage = `url('${SUPABASE_URL}/storage/v1/object/public/thumbs/${thumbName}')`;
@@ -731,8 +760,8 @@ const setupAuthForms = () => {
     setMessage(signupForm, msg, true);
   }
 
-  if (!supabase) {
-    const msg = 'Supabase client failed to load. Check that supabase.js and the CDN script are loading.';
+  if (!supabaseClient) {
+    const msg = 'Supabase client failed to load. Check that supabaseClient.js and the CDN script are loading.';
     setMessage(loginForm, msg, true);
     setMessage(signupForm, msg, true);
     return;
@@ -749,7 +778,7 @@ const setupAuthForms = () => {
       }
       setMessage(loginForm, '');
       try {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error) {
           const msg = error.message.includes('Email not confirmed')
             ? 'Please confirm your email before logging in.'
@@ -780,7 +809,7 @@ const setupAuthForms = () => {
       }
 
       try {
-        const { data: existing, error: existingError } = await supabase
+        const { data: existing, error: existingError } = await supabaseClient
           .from('profiles')
           .select('id')
           .ilike('username', username)
@@ -793,7 +822,7 @@ const setupAuthForms = () => {
           return;
         }
 
-        const { data, error } = await supabase.auth.signUp({
+        const { data, error } = await supabaseClient.auth.signUp({
           email,
           password,
           options: {
@@ -808,7 +837,7 @@ const setupAuthForms = () => {
         }
 
         if (data.session) {
-          await supabase.from('profiles').upsert(
+          await supabaseClient.from('profiles').upsert(
             { id: data.user.id, username, display_name: displayName },
             { onConflict: 'id' }
           );
@@ -830,11 +859,11 @@ const setupUpload = () => {
   const fileInput = document.querySelector('[data-upload-file]');
   const progressBar = document.querySelector('[data-upload-progress]');
   const statusText = document.querySelector('[data-upload-status]');
-  if (!uploadForm || !fileInput || !supabase) return;
+  if (!uploadForm || !fileInput || !supabaseClient) return;
 
   fetchSession().then(async (session) => {
     if (!session) return;
-    const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+    const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
     if (!profile) return;
     const visibilityRadio = uploadForm.querySelector(`[name=\"visibility\"][value=\"${profile.default_visibility}\"]`);
     if (visibilityRadio) visibilityRadio.checked = true;
@@ -865,7 +894,7 @@ const setupUpload = () => {
     if (progressBar) progressBar.style.width = '20%';
 
     const fileName = `${session.user.id}/${Date.now()}-${file.name}`;
-    const { error: uploadError } = await supabase.storage.from('clips').upload(fileName, file);
+    const { error: uploadError } = await supabaseClient.storage.from('clips').upload(fileName, file);
     if (uploadError) return alert(uploadError.message);
 
     if (progressBar) progressBar.style.width = '60%';
@@ -875,7 +904,7 @@ const setupUpload = () => {
     let thumbPath = null;
     if (blob) {
       const thumbName = `${session.user.id}/${Date.now()}-${file.name}.jpg`;
-      const { error: thumbErr } = await supabase.storage.from('thumbs').upload(thumbName, blob);
+      const { error: thumbErr } = await supabaseClient.storage.from('thumbs').upload(thumbName, blob);
       if (!thumbErr) thumbPath = thumbName;
     }
 
@@ -885,7 +914,7 @@ const setupUpload = () => {
     const slug = `${title}`.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const clipSecret = randomSecret();
 
-    const { data: clipData, error: clipError } = await supabase.from('clips').insert({
+    const { data: clipData, error: clipError } = await supabaseClient.from('clips').insert({
       user_id: session.user.id,
       title,
       description,
@@ -904,9 +933,9 @@ const setupUpload = () => {
     if (clipError) return alert(clipError.message);
 
     for (const tag of tags) {
-      const { data: tagRow } = await supabase.from('tags').upsert({ name: tag }).select().single();
+      const { data: tagRow } = await supabaseClient.from('tags').upsert({ name: tag }).select().single();
       if (tagRow) {
-        await supabase.from('clip_tags').insert({ clip_id: clipData.id, tag_id: tagRow.id });
+        await supabaseClient.from('clip_tags').insert({ clip_id: clipData.id, tag_id: tagRow.id });
       }
     }
 
@@ -917,7 +946,7 @@ const setupUpload = () => {
 };
 const hydrateFollows = async () => {
   const session = await fetchSession();
-  if (!session || !supabase) return;
+  if (!session || !supabaseClient) return;
 
   const buttons = Array.from(document.querySelectorAll('[data-follow-id]'))
     .filter((btn) => btn.getAttribute('data-follow-id'));
@@ -925,7 +954,7 @@ const hydrateFollows = async () => {
   if (buttons.length === 0) return;
 
   const followIds = buttons.map((btn) => btn.getAttribute('data-follow-id'));
-  const { data } = await supabase
+  const { data } = await supabaseClient
     .from('follows')
     .select('following_id')
     .in('following_id', followIds)
@@ -943,7 +972,7 @@ const hydrateFollows = async () => {
 
 const setupFollowButtons = () => {
   document.addEventListener('click', async (event) => {
-    if (!supabase) return;
+    if (!supabaseClient) return;
     const followBtn = event.target.closest('[data-follow-id]');
     if (!followBtn) return;
     const targetId = followBtn.getAttribute('data-follow-id');
@@ -954,7 +983,7 @@ const setupFollowButtons = () => {
 
     const isFollowing = followBtn.getAttribute('aria-pressed') === 'true';
     if (isFollowing) {
-      await supabase
+      await supabaseClient
         .from('follows')
         .delete()
         .eq('follower_id', session.user.id)
@@ -962,7 +991,7 @@ const setupFollowButtons = () => {
       followBtn.textContent = 'Follow';
       followBtn.setAttribute('aria-pressed', 'false');
     } else {
-      await supabase.from('follows').insert({
+      await supabaseClient.from('follows').insert({
         follower_id: session.user.id,
         following_id: targetId
       });
@@ -1024,12 +1053,12 @@ const setupModalActions = () => {
     }
 
     if (reportBtn && activeClipId) {
-      if (!supabase) return;
+      if (!supabaseClient) return;
       const session = await fetchSession();
       if (!session) return alert('Please log in to report clips.');
       const reason = prompt('Reason for report?');
       if (!reason) return;
-      await supabase.from('reports').insert({ reporter_id: session.user.id, clip_id: activeClipId, reason });
+      await supabaseClient.from('reports').insert({ reporter_id: session.user.id, clip_id: activeClipId, reason });
       showToast('Report submitted');
     }
 
@@ -1066,22 +1095,22 @@ const setupDashboardActions = () => {
 };
 
 const createCollection = async () => {
-  if (!supabase) return;
+  if (!supabaseClient) return;
   const session = await fetchSession();
   if (!session) return alert('Please log in.');
   const title = prompt('Collection title');
   if (!title) return;
-  await supabase.from('collections').insert({ user_id: session.user.id, title, visibility: 'private' });
+  await supabaseClient.from('collections').insert({ user_id: session.user.id, title, visibility: 'private' });
   showToast('Collection created');
   loadCollections();
 };
 
 const setupSettings = async () => {
-  if (!supabase || page !== 'settings') return;
+  if (!supabaseClient || page !== 'settings') return;
   const session = await fetchSession();
   if (!session) return;
 
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+  const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
   const settingInputs = document.querySelectorAll('[data-setting]');
   settingInputs.forEach((input) => {
     const key = input.dataset.setting;
@@ -1107,7 +1136,7 @@ const setupSettings = async () => {
       } else {
         value = input.checked;
       }
-      await supabase.from('profiles').update({ [key]: value }).eq('id', session.user.id);
+      await supabaseClient.from('profiles').update({ [key]: value }).eq('id', session.user.id);
       showToast('Settings updated');
     });
   });
@@ -1120,33 +1149,33 @@ const setupSettings = async () => {
     if (action === 'display-name') {
       const value = prompt('New display name');
       if (!value) return;
-      await supabase.from('profiles').update({ display_name: value }).eq('id', session.user.id);
+      await supabaseClient.from('profiles').update({ display_name: value }).eq('id', session.user.id);
       showToast('Display name updated');
     }
 
     if (action === 'username') {
       const value = prompt('New username');
       if (!value) return;
-      await supabase.from('profiles').update({ username: value.replace('@', '') }).eq('id', session.user.id);
+      await supabaseClient.from('profiles').update({ username: value.replace('@', '') }).eq('id', session.user.id);
       showToast('Username updated');
     }
 
     if (action === 'email') {
       const value = prompt('New email');
       if (!value) return;
-      await supabase.auth.updateUser({ email: value });
+      await supabaseClient.auth.updateUser({ email: value });
       showToast('Email update requested. Check your inbox.');
     }
 
     if (action === 'reset-password') {
       const value = prompt('Email for password reset');
       if (!value) return;
-      await supabase.auth.resetPasswordForEmail(value, { redirectTo: AUTH_REDIRECT });
+      await supabaseClient.auth.resetPasswordForEmail(value, { redirectTo: AUTH_REDIRECT });
       showToast('Password reset email sent');
     }
 
     if (action === 'signout') {
-      await supabase.auth.signOut({ scope: 'global' });
+      await supabaseClient.auth.signOut({ scope: 'global' });
       window.location.href = 'index.html';
     }
 
@@ -1155,7 +1184,7 @@ const setupSettings = async () => {
     }
 
     if (action === 'delete-account') {
-      alert('Delete account requires admin privileges in Supabase.');
+      alert('Delete account requires admin privileges in supabaseClient.');
     }
   });
 };
@@ -1169,13 +1198,13 @@ const setupFollowingPage = () => {
 };
 
 const loadAdmin = async () => {
-  if (!supabase || page !== 'admin') return;
+  if (!supabaseClient || page !== 'admin') return;
   const list = document.querySelector('[data-admin-reports]');
   if (!list) return;
   const session = await fetchSession();
   if (!session) return;
 
-  const { data } = await supabase
+  const { data } = await supabaseClient
     .from('reports')
     .select('id,reason,created_at,clip_id,reported_user_id')
     .order('created_at', { ascending: false });
@@ -1184,7 +1213,7 @@ const loadAdmin = async () => {
     <div class="list-item">
       <div>
         <strong>Report ${rep.clip_id ? `Clip` : 'User'}</strong>
-        <div class="footer-note">Reason: ${rep.reason} • ${formatTimeAgo(rep.created_at)}</div>
+        <div class="footer-note">Reason: ${rep.reason} - ${formatTimeAgo(rep.created_at)}</div>
       </div>
       <div class="tag-row">
         <button class="button-secondary" data-action="dismiss-report" data-report-id="${rep.id}">Dismiss</button>
@@ -1194,7 +1223,8 @@ const loadAdmin = async () => {
 };
 
 const bootstrap = async () => {
-  if (!supabase) {
+  initDebugBanner();
+  if (!supabaseClient) {
     alert('Supabase client failed to load. Check your GitHub Pages URL config.');
     return;
   }
@@ -1227,4 +1257,5 @@ const bootstrap = async () => {
 };
 
 bootstrap();
+
 
