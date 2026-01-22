@@ -1,4 +1,4 @@
-﻿-- VELO Supabase schema + RLS
+﻿-- VELO Supabase schema + RLS (safe to run in SQL editor)
 
 -- Extensions
 create extension if not exists "uuid-ossp";
@@ -102,33 +102,6 @@ create table if not exists collection_clips (
   added_at timestamptz default now(),
   primary key (collection_id, clip_id)
 );
-
--- Storage policies (buckets: clips, thumbs, avatars)
-alter table storage.objects enable row level security;
-
-create policy "Public read for clips" on storage.objects
-  for select using (bucket_id in ('clips','thumbs','avatars'));
-
-create policy "Users can upload clips" on storage.objects
-  for insert with check (
-    bucket_id = 'clips' and auth.uid() is not null
-  );
-
-create policy "Users can upload thumbs" on storage.objects
-  for insert with check (
-    bucket_id = 'thumbs' and auth.uid() is not null
-  );
-
-create policy "Users can upload avatars" on storage.objects
-  for insert with check (
-    bucket_id = 'avatars' and auth.uid() is not null
-  );
-
-create policy "Users can update own objects" on storage.objects
-  for update using (auth.uid() = owner);
-
-create policy "Users can delete own objects" on storage.objects
-  for delete using (auth.uid() = owner);
 
 -- Counters via triggers
 create or replace function handle_like_insert()
