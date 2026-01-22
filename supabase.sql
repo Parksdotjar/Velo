@@ -32,6 +32,9 @@ alter table profiles add column if not exists autoplay_previews boolean default 
 alter table profiles add column if not exists default_muted boolean default true;
 alter table profiles add column if not exists default_speed numeric default 1.0;
 
+-- Ensure existing profiles are public by default
+update profiles set profile_visible = true where profile_visible is null;
+
 -- Auto-create profile on auth sign-up
 create or replace function public.handle_new_user()
 returns trigger

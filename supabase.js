@@ -236,6 +236,7 @@ const loadExplore = async () => {
   const { data, error } = await query.limit(80);
   if (error) {
     console.error(error);
+    showToast(`Explore error: ${error.message}`);
     return;
   }
 
@@ -1134,15 +1135,19 @@ const setupSettings = async () => {
 
   const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
   const settingInputs = document.querySelectorAll('[data-setting]');
+  const pendingSettings = {};
   settingInputs.forEach((input) => {
     const key = input.dataset.setting;
     if (!key || !profile) return;
     if (key === 'default_visibility') {
       input.checked = profile.default_visibility === 'public';
+      pendingSettings[key] = profile.default_visibility;
     } else if (key === 'default_speed') {
       input.checked = (profile.default_speed || 1) > 1;
+      pendingSettings[key] = profile.default_speed || 1.0;
     } else {
       input.checked = Boolean(profile[key]);
+      pendingSettings[key] = profile[key];
     }
   });
 
@@ -1158,8 +1163,7 @@ const setupSettings = async () => {
       } else {
         value = input.checked;
       }
-      await supabaseClient.from('profiles').update({ [key]: value }).eq('id', session.user.id);
-      showToast('Settings updated');
+      pendingSettings[key] = value;
     });
   });
 
@@ -1194,6 +1198,11 @@ const setupSettings = async () => {
       if (!value) return;
       await supabaseClient.auth.resetPasswordForEmail(value, { redirectTo: AUTH_REDIRECT });
       showToast('Password reset email sent');
+    }
+
+    if (action === 'save-settings') {
+      await supabaseClient.from('profiles').update(pendingSettings).eq('id', session.user.id);
+      showToast('Settings saved');
     }
 
     if (action === 'signout') {
