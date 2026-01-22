@@ -13,6 +13,11 @@ const getBaseUrl = () => {
   return `${window.location.origin}${base}`;
 };
 const AUTH_REDIRECT = `${getBaseUrl()}login.html`;
+const isUnsupportedOrigin = () => {
+  if (location.protocol === 'file:') return true;
+  if (location.hostname.endsWith('github.com')) return true;
+  return false;
+};
 
 const showToast = (message) => {
   const container = document.querySelector('.toast-container');
@@ -720,13 +725,22 @@ const setupAuthForms = () => {
     box.style.color = isError ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.7)';
   };
 
+  if (isUnsupportedOrigin()) {
+    const msg = 'Auth only works on GitHub Pages or a local server, not on github.com or file://';
+    setMessage(loginForm, msg, true);
+    setMessage(signupForm, msg, true);
+  }
+
+  if (!supabase) {
+    const msg = 'Supabase client failed to load. Check that supabase.js and the CDN script are loading.';
+    setMessage(loginForm, msg, true);
+    setMessage(signupForm, msg, true);
+    return;
+  }
+
   if (loginForm) {
     loginForm.addEventListener('submit', async (event) => {
       event.preventDefault();
-      if (!supabase) {
-        setMessage(loginForm, 'Supabase client failed to load. Use GitHub Pages or a local server.', true);
-        return;
-      }
       const email = loginForm.querySelector('[name="email"]').value.trim();
       const password = loginForm.querySelector('[name="password"]').value.trim();
       if (!email || !password) {
@@ -749,10 +763,6 @@ const setupAuthForms = () => {
   if (signupForm) {
     signupForm.addEventListener('submit', async (event) => {
       event.preventDefault();
-      if (!supabase) {
-        setMessage(signupForm, 'Supabase client failed to load. Use GitHub Pages or a local server.', true);
-        return;
-      }
       const email = signupForm.querySelector('[name="email"]').value.trim();
       const password = signupForm.querySelector('[name="password"]').value.trim();
       const displayName = signupForm.querySelector('[name="display_name"]').value.trim();
