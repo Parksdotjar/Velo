@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VELO | Dashboard</title>
+  <title>VELO | Dashboard</title>`n  <meta name="color-scheme" content="dark" />`n  <style>html, body { background: #000000; color: #ffffff; }</style>
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body data-auth="logged-in">
+<body data-auth="logged-in" data-stagger="on" data-page="dashboard">
   <nav class="navbar">
     <div class="nav-section">
       <a class="brand" href="index.html">
@@ -39,8 +39,14 @@
           <p>Manage your clips, collections, and saved content.</p>
         </div>
         <div class="tag-row">
-          <button class="button-primary">Upload New</button>
-          <button class="button-secondary">New Collection</button>
+          <button class="button-primary">
+            <svg class="icon"><use href="sprite.svg#icon-upload"></use></svg>
+            Upload New
+          </button>
+          <button class="button-secondary">
+            <svg class="icon"><use href="sprite.svg#icon-grid"></use></svg>
+            New Collection
+          </button>
         </div>
       </section>
 
@@ -82,7 +88,7 @@
         <button class="button-secondary">Sort: Latest</button>
       </div>
 
-      <section class="grid cols-3">
+      <section class="grid cols-3" data-dashboard-grid>
         <article class="clip-card">
           <div class="clip-thumb"></div>
           <div class="clip-meta">
@@ -170,6 +176,6 @@
     </div>
   </main>
 
-  <script src="app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>`n  <script src="supabase.js"></script>`n  <script src="app.js"></script>
 </body>
 </html>

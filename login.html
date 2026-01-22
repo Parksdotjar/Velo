@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VELO | Log in</title>
+  <title>VELO | Log in</title>`n  <meta name="color-scheme" content="dark" />`n  <style>html, body { background: #000000; color: #ffffff; }</style>
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body data-auth="logged-out">
+<body data-auth="logged-out" data-stagger="on" data-page="login">
   <nav class="navbar">
     <div class="nav-section">
       <a class="brand" href="index.html">
@@ -34,23 +34,23 @@
       </section>
 
       <section class="panel" style="padding: 24px;">
-        <div class="form-section">
+        <form class="form-section" data-login-form>
           <div class="form-group">
             <label>Email</label>
-            <input class="input" placeholder="you@velo.com" />
+            <input class="input" name="email" placeholder="you@velo.com" />
           </div>
           <div class="form-group">
             <label>Password</label>
-            <input class="input" type="password" placeholder="••••••••" />
+            <input class="input" name="password" type="password" placeholder="••••••••" />
           </div>
-          <button class="button-primary">Log in</button>
-          <button class="button-secondary">Use magic link</button>
+          <button class="button-primary" type="submit">Log in</button>
+          <button class="button-secondary" type="button">Use magic link</button>
           <div class="footer-note">No account yet? <a href="signup.html">Sign up</a></div>
-        </div>
+        </form>
       </section>
     </div>
   </main>
 
-  <script src="app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>`n  <script src="supabase.js"></script>`n  <script src="app.js"></script>
 </body>
 </html>

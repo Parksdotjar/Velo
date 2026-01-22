@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VELO | Upload</title>
+  <title>VELO | Upload</title>`n  <meta name="color-scheme" content="dark" />`n  <style>html, body { background: #000000; color: #ffffff; }</style>
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body data-auth="logged-in">
+<body data-auth="logged-in" data-stagger="on" data-page="upload">
   <nav class="navbar">
     <div class="nav-section">
       <a class="brand" href="index.html">
@@ -46,29 +46,30 @@
           <svg class="icon" style="width: 32px; height: 32px;"><use href="sprite.svg#icon-upload"></use></svg>
           <strong>Drop your video here</strong>
           <span class="footer-note">MP4, MOV, up to 2GB</span>
-          <button class="button-secondary">Select File</button>
+          <input type="file" data-upload-file accept="video/*" style="display:none;" />
+          <button class="button-secondary" type="button" onclick="document.querySelector('[data-upload-file]').click()">Select File</button>
         </div>
 
         <div class="panel" style="padding: 18px;">
-          <div class="form-section">
+          <form class="form-section" data-upload-form>
             <div class="form-group">
               <label>Title (required)</label>
-              <input class="input" placeholder="Clip title" />
+              <input class="input" name="title" placeholder="Clip title" />
             </div>
             <div class="form-group">
               <label>Tags</label>
-              <input class="input" placeholder="Type a tag and press enter" />
+              <input class="input" name="tags" placeholder="tag1, tag2, tag3" />
             </div>
             <div class="form-group">
               <label>Description</label>
-              <textarea class="textarea" placeholder="Optional description"></textarea>
+              <textarea class="textarea" name="description" placeholder="Optional description"></textarea>
             </div>
             <div class="form-group">
               <label>Visibility</label>
               <div class="chip-row" style="margin-top: 0;">
-                <button class="chip active">Public</button>
-                <button class="chip">Unlisted</button>
-                <button class="chip">Private</button>
+                <label class="chip active"><input type="radio" name="visibility" value="public" checked style="display:none;">Public</label>
+                <label class="chip"><input type="radio" name="visibility" value="unlisted" style="display:none;">Unlisted</label>
+                <label class="chip"><input type="radio" name="visibility" value="private" style="display:none;">Private</label>
               </div>
             </div>
             <div class="toggle">
@@ -83,8 +84,11 @@
               <span>Content warning</span>
               <input type="checkbox" />
             </div>
-            <button class="button-primary">Publish</button>
-          </div>
+            <button class="button-primary" type="submit">
+              <svg class="icon"><use href="sprite.svg#icon-upload"></use></svg>
+              Publish
+            </button>
+          </form>
         </div>
       </section>
 
@@ -96,6 +100,6 @@
     </div>
   </main>
 
-  <script src="app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>`n  <script src="supabase.js"></script>`n  <script src="app.js"></script>
 </body>
 </html>

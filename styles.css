@@ -30,11 +30,6 @@ body {
   min-height: 100vh;
 }
 
-body.is-loaded .page {
-  opacity: 1;
-  transform: translateY(0);
-}
-
 a {
   color: inherit;
   text-decoration: none;
@@ -52,9 +47,12 @@ button, input, textarea, select {
 
 .page {
   padding: 110px 24px 80px;
+}
+
+body.page-enter .page {
   opacity: 0;
-  transform: translateY(12px);
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  transform: translateY(14px);
+  animation: page-in 0.6s ease forwards;
 }
 
 .container {
@@ -213,6 +211,9 @@ button, input, textarea, select {
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s ease, border 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .button-primary:hover {
@@ -230,6 +231,9 @@ button, input, textarea, select {
   font-weight: 500;
   cursor: pointer;
   transition: background 0.2s ease, border 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .button-secondary:hover {
@@ -278,15 +282,20 @@ button, input, textarea, select {
   flex-direction: column;
   gap: 12px;
   transition: border 0.2s ease, transform 0.2s ease;
-  opacity: 0;
-  transform: translateY(10px);
 }
 
-.clip-card.reveal {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 0.5s ease, transform 0.5s ease, border 0.2s ease;
+.stagger-item {
+  opacity: 0;
+  transform: translateY(18px);
+  will-change: transform, opacity;
+  visibility: hidden;
 }
+
+.stagger-item.reveal {
+  animation: fade-up 0.8s ease forwards;
+  visibility: visible;
+}
+
 
 .clip-card:hover {
   border-color: var(--hover-gray);
@@ -348,6 +357,12 @@ button, input, textarea, select {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+}
+
+.like-count {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-right: 4px;
 }
 
 .quick-actions .icon-button {
@@ -568,13 +583,11 @@ button, input, textarea, select {
   grid-template-columns: 1.4fr 0.9fr;
   gap: 18px;
   opacity: 0;
-  transform: translateY(12px) scale(0.98);
-  transition: opacity 0.35s ease, transform 0.35s ease;
+  transform: translateY(18px) scale(0.985);
 }
 
 .modal.active .modal-card {
-  opacity: 1;
-  transform: translateY(0) scale(1);
+  animation: modal-pop 0.6s ease forwards;
 }
 
 .player {
@@ -617,6 +630,48 @@ button, input, textarea, select {
   gap: 10px;
   z-index: 1400;
 }
+
+.loader-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--true-black);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  opacity: 1;
+  transition: opacity 0.6s ease;
+  animation: loader-out 0.6s ease forwards;
+  animation-delay: 1.2s;
+}
+
+.loader-overlay.dismiss {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cube {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  transform-style: preserve-3d;
+  animation: cube-spin 1.4s linear infinite;
+}
+
+.cube-face {
+  position: absolute;
+  width: 42px;
+  height: 42px;
+  background: var(--deep-gray);
+  border: 1px solid var(--border-gray);
+}
+
+.cube-face.front  { transform: translateZ(21px); }
+.cube-face.back   { transform: rotateY(180deg) translateZ(21px); }
+.cube-face.right  { transform: rotateY(90deg) translateZ(21px); }
+.cube-face.left   { transform: rotateY(-90deg) translateZ(21px); }
+.cube-face.top    { transform: rotateX(90deg) translateZ(21px); }
+.cube-face.bottom { transform: rotateX(-90deg) translateZ(21px); }
 
 .toast {
   padding: 12px 16px;
@@ -713,12 +768,90 @@ body[data-auth="logged-in"] .guest-only {
   }
 }
 
+.navbar.stagger-item {
+  transform: translateX(-50%) translateY(18px);
+}
+
+body[data-stagger="on"] nav,
+body[data-stagger="on"] nav *,
+body[data-stagger="on"] main,
+body[data-stagger="on"] main * {
+  visibility: hidden;
+}
+
+
+.navbar.stagger-item.reveal {
+  animation: fade-up-navbar 0.8s ease forwards;
+}
+
+
 @keyframes shimmer {
   0% {
     transform: translateX(-100%);
   }
   100% {
     transform: translateX(100%);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+@keyframes fade-up-navbar {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cube-spin {
+  0% {
+    transform: rotateX(0deg) rotateY(0deg);
+  }
+  100% {
+    transform: rotateX(360deg) rotateY(360deg);
+  }
+}
+
+@keyframes loader-out {
+  to {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+@keyframes modal-pop {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 

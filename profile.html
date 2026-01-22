@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VELO | Profile</title>
+  <title>VELO | Profile</title>`n  <meta name="color-scheme" content="dark" />`n  <style>html, body { background: #000000; color: #ffffff; }</style>
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body data-auth="logged-in">
+<body data-auth="logged-in" data-stagger="on" data-page="profile">
   <nav class="navbar">
     <div class="nav-section">
       <a class="brand" href="index.html">
@@ -34,13 +34,16 @@
   <main class="page">
     <div class="container">
       <section class="profile-header">
-        <div class="avatar"></div>
+        <div class="avatar" data-profile-avatar></div>
         <div>
-          <h1 style="margin: 0;">Nova Vale</h1>
-          <div class="footer-note">@nova</div>
-          <p style="margin-top: 8px; color: var(--text-secondary);">Cinematic edits, macro motion, and late-night drives.</p>
+          <h1 style="margin: 0;" data-profile-name>Nova Vale</h1>
+          <div class="footer-note" data-profile-username>@nova</div>
+          <p style="margin-top: 8px; color: var(--text-secondary);" data-profile-bio>Cinematic edits, macro motion, and late-night drives.</p>
         </div>
-        <button class="button-primary" style="margin-left: auto;">Follow</button>
+        <button class="button-primary" style="margin-left: auto;" data-follow-btn data-follow-id="">
+          <svg class="icon"><use href="sprite.svg#icon-user"></use></svg>
+          Follow
+        </button>
       </section>
 
       <div class="tabs">
@@ -49,7 +52,7 @@
         <button class="tab">Likes</button>
       </div>
 
-      <section class="grid cols-3">
+      <section class="grid cols-3" data-profile-grid>
         <article class="clip-card">
           <div class="clip-thumb"></div>
           <div class="clip-meta">
@@ -89,6 +92,6 @@
     </div>
   </main>
 
-  <script src="app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>`n  <script src="supabase.js"></script>`n  <script src="app.js"></script>
 </body>
 </html>

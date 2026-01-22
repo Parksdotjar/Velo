@@ -2,7 +2,22 @@
 const modalTriggers = document.querySelectorAll('[data-open-modal]');
 const modalClose = document.querySelector('[data-close-modal]');
 const authToggle = document.querySelector('[data-toggle-auth]');
-const revealItems = document.querySelectorAll('.clip-card');
+const loader = document.querySelector('.loader-overlay');
+const navRoot = document.querySelector('nav');
+const mainRoot = document.querySelector('main');
+const groupedItems = [];
+let flatItems = [];
+let isTransitioning = false;
+
+const getDomOrder = (items) => {
+  return items.sort((a, b) => {
+    if (a === b) return 0;
+    const pos = a.compareDocumentPosition(b);
+    if (pos & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
+    if (pos & Node.DOCUMENT_POSITION_PRECEDING) return 1;
+    return 0;
+  });
+};
 
 const openModal = () => {
   if (!modal) return;
@@ -14,16 +29,139 @@ const closeModal = () => {
   modal.classList.remove('active');
 };
 
-const staggerReveal = () => {
-  revealItems.forEach((item, index) => {
-    setTimeout(() => {
+const buildGroups = () => {
+  const used = new Set();
+  const groups = [];
+
+  if (navRoot) {
+    const navItems = getDomOrder([navRoot, ...navRoot.querySelectorAll('*')]);
+    groups.push({ items: navItems, type: 'nav' });
+    navItems.forEach((item) => used.add(item));
+  }
+
+  if (mainRoot) {
+    const primarySelectors = [
+      '.hero',
+      '.search-row',
+      '.chip-row',
+      '.tabs',
+      '.stat-grid',
+      '.split',
+      '.section',
+      '.panel'
+    ];
+
+    const primaryContainers = getDomOrder(
+      Array.from(mainRoot.querySelectorAll(primarySelectors.join(',')))
+    );
+
+    primaryContainers.forEach((container) => {
+      const children = Array.from(container.children).filter(
+        (child) => !child.closest('.clip-card')
+      );
+      const groupItems = children.length ? children : [container];
+      const ordered = getDomOrder(groupItems);
+      const filtered = ordered.filter((item) => !used.has(item));
+      if (filtered.length) {
+        groups.push({ items: filtered, type: 'section' });
+        filtered.forEach((item) => used.add(item));
+      }
+    });
+
+    const grids = Array.from(mainRoot.querySelectorAll('.grid'));
+    grids.forEach((grid) => {
+      const cards = getDomOrder(Array.from(grid.querySelectorAll('.clip-card'))).filter(
+        (item) => !used.has(item)
+      );
+      cards.forEach((card) => {
+        const cardItems = getDomOrder([card, ...card.querySelectorAll('*')]);
+        const filtered = cardItems.filter((item) => !used.has(item));
+        if (filtered.length) {
+          groups.push({ items: filtered, type: 'card' });
+          filtered.forEach((item) => used.add(item));
+        }
+      });
+    });
+
+    const remaining = getDomOrder(Array.from(mainRoot.querySelectorAll('*'))).filter(
+      (item) => !used.has(item) && !item.closest('.clip-card')
+    );
+    if (remaining.length) {
+      groups.push({ items: remaining, type: 'misc' });
+      remaining.forEach((item) => used.add(item));
+    }
+  }
+
+  groupedItems.length = 0;
+  groups.forEach((group) => groupedItems.push(group));
+  return groups;
+};
+
+const prepareStagger = () => {
+  const groups = buildGroups();
+  const nonCardGroups = groups.filter((group) => group.type !== 'card');
+  const cardGroups = groups.filter((group) => group.type === 'card');
+
+  const nonCardItemDelay = 12;
+  const nonCardGroupOffset = 30;
+  let nonCardEnd = 0;
+
+  nonCardGroups.forEach((group, groupIndex) => {
+    const items = group.items || group;
+    const groupStart = groupIndex * nonCardGroupOffset;
+
+    items.forEach((item, itemIndex) => {
+      item.classList.add('stagger-item');
+      item.classList.remove('leave');
+      item.style.animationDelay = `${groupStart + itemIndex * nonCardItemDelay}ms`;
+    });
+
+    const groupEnd = groupStart + items.length * nonCardItemDelay;
+    nonCardEnd = Math.max(nonCardEnd, groupEnd);
+  });
+
+  const cardItemDelay = 30;
+  const cardGap = 60;
+  let cardStart = nonCardEnd + 80;
+
+  cardGroups.forEach((group) => {
+    const items = group.items || group;
+    items.forEach((item, itemIndex) => {
+      item.classList.add('stagger-item');
+      item.classList.remove('leave');
+      item.style.animationDelay = `${cardStart + itemIndex * cardItemDelay}ms`;
+    });
+    cardStart += items.length * cardItemDelay + cardGap;
+  });
+
+  flatItems = groups.flatMap((group) => group.items || group);
+};
+
+const runReveal = () => {
+  requestAnimationFrame(() => {
+    flatItems.forEach((item) => {
       item.classList.add('reveal');
-    }, 70 * index);
+    });
   });
 };
 
+window.veloStagger = {
+  prepareStagger,
+  runReveal
+};
+
 modalTriggers.forEach((trigger) => {
-  trigger.addEventListener('click', openModal);
+  trigger.addEventListener('click', () => {
+    const card = trigger.closest('[data-clip-id]');
+    if (card) {
+      const modalFollow = document.querySelector('[data-follow-btn]');
+      const creatorId = card.getAttribute('data-user-id');
+      if (modalFollow && creatorId) {
+        modalFollow.setAttribute('data-follow-id', creatorId);
+      }
+    }
+    openModal();
+  });
 });
 
 if (modalClose) {
@@ -70,7 +208,44 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
-window.addEventListener('load', () => {
-  document.body.classList.add('is-loaded');
-  staggerReveal();
+const dismissLoader = (delay = 900, callback) => {
+  if (!loader) return;
+  setTimeout(() => {
+    loader.classList.add('dismiss');
+    if (callback) callback();
+  }, delay);
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.body.classList.add('page-enter');
+  prepareStagger();
+  if (!loader) {
+    document.body.classList.add('is-loaded');
+    runReveal();
+  }
 });
+
+window.addEventListener('load', () => {
+  requestAnimationFrame(() => {
+    if (loader) {
+      dismissLoader(1200, () => {
+        document.body.classList.add('is-loaded');
+        runReveal();
+      });
+    } else {
+      document.body.classList.add('is-loaded');
+      runReveal();
+    }
+  });
+});
+
+setTimeout(() => {
+  dismissLoader(0, () => {
+    if (!document.body.classList.contains('is-loaded')) {
+      document.body.classList.add('is-loaded');
+      runReveal();
+    }
+  });
+}, 2500);
+
+// Page exit transitions removed to prevent flicker on navigation.

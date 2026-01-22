@@ -3,10 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VELO | Explore</title>
+  <title>VELO | Explore</title>`n  <meta name="color-scheme" content="dark" />`n  <style>html, body { background: #000000; color: #ffffff; }</style>
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body data-auth="logged-out">
+<body data-auth="logged-out" data-stagger="on" data-page="explore">
+  <div class="loader-overlay">
+    <div class="cube" aria-label="Loading">
+      <div class="cube-face front"></div>
+      <div class="cube-face back"></div>
+      <div class="cube-face right"></div>
+      <div class="cube-face left"></div>
+      <div class="cube-face top"></div>
+      <div class="cube-face bottom"></div>
+    </div>
+  </div>
   <nav class="navbar">
     <div class="nav-section">
       <a class="brand" href="index.html">
@@ -55,21 +65,21 @@
       </div>
 
       <div class="chip-row">
-        <button class="chip active">New</button>
-        <button class="chip">Trending</button>
-        <button class="chip">Most Viewed</button>
-        <button class="chip">Most Liked</button>
-        <button class="chip">&lt;10s</button>
-        <button class="chip">10-30s</button>
-        <button class="chip">30-60s</button>
-        <button class="chip">60s+</button>
-        <button class="chip">#montage</button>
-        <button class="chip">#tutorial</button>
-        <button class="chip">#highlight</button>
-        <button class="chip">#cinematic</button>
+        <button class="chip active" data-sort="new">New</button>
+        <button class="chip" data-sort="trending">Trending</button>
+        <button class="chip" data-sort="views">Most Viewed</button>
+        <button class="chip" data-sort="likes">Most Liked</button>
+        <button class="chip" data-duration="0-10">&lt;10s</button>
+        <button class="chip" data-duration="10-30">10-30s</button>
+        <button class="chip" data-duration="30-60">30-60s</button>
+        <button class="chip" data-duration="60+">60s+</button>
+        <button class="chip" data-tag="montage">#montage</button>
+        <button class="chip" data-tag="tutorial">#tutorial</button>
+        <button class="chip" data-tag="highlight">#highlight</button>
+        <button class="chip" data-tag="cinematic">#cinematic</button>
       </div>
 
-      <section class="grid cols-3">
+      <section class="grid cols-3" data-clips-grid>
         <article class="clip-card" data-open-modal>
           <div class="clip-thumb">
             <div class="thumb-overlay">00:18</div>
@@ -264,18 +274,18 @@
         </div>
       </div>
       <div class="meta-stack">
-        <h3>Midnight Drift</h3>
-        <div class="tag-row">
+        <h3 data-modal-title>Midnight Drift</h3>
+        <div class="tag-row" data-modal-tags>
           <span class="tag">#montage</span>
           <span class="tag">#cinematic</span>
           <span class="tag">#night</span>
         </div>
         <div class="mini-card">
           <div>
-            <strong>@nova</strong>
-            <div class="footer-note">2.1k followers</div>
+            <strong data-modal-creator>@nova</strong>
+            <div class="footer-note" data-modal-followers>2.1k followers</div>
           </div>
-          <button class="button-secondary">Follow</button>
+          <button class="button-secondary" data-follow-btn data-follow-id="">Follow</button>
         </div>
         <div class="tag-row">
           <button class="button-primary">Like</button>
@@ -297,6 +307,6 @@
     <div class="toast">Saved to your private list</div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>`n  <script src="supabase.js"></script>`n  <script src="app.js"></script>
 </body>
 </html>
