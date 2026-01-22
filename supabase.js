@@ -674,12 +674,22 @@ const setupClipActions = () => {
         return;
       }
       const url = `${SUPABASE_URL}/storage/v1/object/public/clips/${clip.video_path}`;
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = clip.video_path?.split('/').pop() || 'velo-clip';
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Download failed');
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = blobUrl;
+        anchor.download = clip.video_path?.split('/').pop() || 'velo-clip';
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        URL.revokeObjectURL(blobUrl);
+      } catch (err) {
+        console.error(err);
+        showToast('Download failed');
+      }
     }
 
     if (card && !likeBtn && !saveBtn && !shareBtn) {
