@@ -859,6 +859,8 @@ const setupUpload = () => {
   const fileInput = document.querySelector('[data-upload-file]');
   const progressBar = document.querySelector('[data-upload-progress]');
   const statusText = document.querySelector('[data-upload-status]');
+  const dropzone = document.querySelector('.dropzone');
+  const previewVideo = document.querySelector('[data-upload-preview]');
   if (!uploadForm || !fileInput || !supabaseClient) return;
 
   fetchSession().then(async (session) => {
@@ -872,6 +874,26 @@ const setupUpload = () => {
     if (allowDownloads) allowDownloads.checked = Boolean(profile.default_allow_downloads);
     if (allowEmbed) allowEmbed.checked = Boolean(profile.default_allow_embed);
   });
+
+  if (fileInput) {
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      if (!file || !dropzone || !previewVideo) return;
+      const previousUrl = previewVideo.dataset.previewUrl;
+      if (previousUrl) URL.revokeObjectURL(previousUrl);
+      dropzone.classList.add('is-loading');
+      dropzone.classList.add('has-preview');
+      const url = URL.createObjectURL(file);
+      previewVideo.dataset.previewUrl = url;
+      previewVideo.src = url;
+      previewVideo.onloadeddata = () => {
+        dropzone.classList.remove('is-loading');
+      };
+      previewVideo.onerror = () => {
+        dropzone.classList.remove('is-loading');
+      };
+    });
+  }
 
   uploadForm.addEventListener('submit', async (event) => {
     event.preventDefault();

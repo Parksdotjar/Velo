@@ -43,11 +43,26 @@
 
       <section class="split">
         <div class="dropzone">
-          <svg class="icon" style="width: 32px; height: 32px;"><use href="sprite.svg#icon-upload"></use></svg>
-          <strong>Drop your video here</strong>
-          <span class="footer-note">MP4, MOV, up to 2GB</span>
-          <input type="file" data-upload-file accept="video/*" style="display:none;" />
-          <button class="button-secondary" type="button" onclick="document.querySelector('[data-upload-file]').click()">Select File</button>
+          <div class="dropzone-content">
+            <svg class="icon" style="width: 32px; height: 32px;"><use href="sprite.svg#icon-upload"></use></svg>
+            <strong>Drop your video here</strong>
+            <span class="footer-note">MP4, MOV, up to 2GB</span>
+            <input type="file" data-upload-file accept="video/*" style="display:none;" />
+            <button class="button-secondary" type="button" onclick="document.querySelector('[data-upload-file]').click()">Select File</button>
+          </div>
+          <div class="upload-preview" data-upload-preview-container>
+            <video data-upload-preview controls muted playsinline></video>
+          </div>
+          <div class="preview-loader" data-preview-loader>
+            <div class="cube" aria-label="Loading">
+              <div class="cube-face front"></div>
+              <div class="cube-face back"></div>
+              <div class="cube-face right"></div>
+              <div class="cube-face left"></div>
+              <div class="cube-face top"></div>
+              <div class="cube-face bottom"></div>
+            </div>
+          </div>
         </div>
 
         <div class="panel" style="padding: 18px;">
