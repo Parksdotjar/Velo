@@ -1,7 +1,9 @@
 ﻿const SUPABASE_URL = 'https://juagusbfswxcwenzegfg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1YWd1c2Jmc3d4Y3dlbnplZ2ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMzk5NzksImV4cCI6MjA4NDYxNTk3OX0.fe76LO6mVP9Okqj9JNhr2EQF7mx-o6F95QrEIOz8yaw';
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = window.supabase?.createClient
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
 const page = document.body.getAttribute('data-page');
 
 const setAuthState = (session) => {
@@ -394,24 +396,39 @@ const setupAuthForms = () => {
   const loginForm = document.querySelector('[data-login-form]');
   const signupForm = document.querySelector('[data-signup-form]');
 
+  const setMessage = (form, message, isError = false) => {
+    const box = form?.querySelector('[data-auth-message]');
+    if (!box) return;
+    box.textContent = message;
+    box.style.color = isError ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.7)';
+  };
+
   if (loginForm) {
     loginForm.addEventListener('submit', async (event) => {
       event.preventDefault();
-      const email = loginForm.querySelector('[name="email"]').value;
-      const password = loginForm.querySelector('[name="password"]').value;
+      const email = loginForm.querySelector('[name="email"]').value.trim();
+      const password = loginForm.querySelector('[name="password"]').value.trim();
+      setMessage(loginForm, '');
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) alert(error.message);
-      else window.location.href = 'dashboard.html';
+      if (error) {
+        const msg = error.message.includes('Email not confirmed')
+          ? 'Please confirm your email before logging in.'
+          : error.message;
+        setMessage(loginForm, msg, true);
+        return;
+      }
+      window.location.href = 'dashboard.html';
     });
   }
 
   if (signupForm) {
     signupForm.addEventListener('submit', async (event) => {
       event.preventDefault();
-      const email = signupForm.querySelector('[name="email"]').value;
-      const password = signupForm.querySelector('[name="password"]').value;
-      const displayName = signupForm.querySelector('[name="display_name"]').value;
-      const username = signupForm.querySelector('[name="username"]').value;
+      const email = signupForm.querySelector('[name="email"]').value.trim();
+      const password = signupForm.querySelector('[name="password"]').value.trim();
+      const displayName = signupForm.querySelector('[name="display_name"]').value.trim();
+      const username = signupForm.querySelector('[name="username"]').value.trim().replace('@', '');
+      setMessage(signupForm, '');
 
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -420,7 +437,7 @@ const setupAuthForms = () => {
       });
 
       if (error) {
-        alert(error.message);
+        setMessage(signupForm, error.message, true);
         return;
       }
 
@@ -432,7 +449,7 @@ const setupAuthForms = () => {
         });
       }
 
-      window.location.href = 'dashboard.html';
+      setMessage(signupForm, 'Check your email to confirm your account, then log in.');
     });
   }
 };
@@ -564,6 +581,10 @@ const hydrateModal = (clipId) => {
 };
 
 const bootstrap = async () => {
+  if (!supabase) {
+    alert('Supabase client failed to load. Open DevTools console for errors.');
+    return;
+  }
   await fetchSession();
   setupAuthForms();
   setupUpload();
