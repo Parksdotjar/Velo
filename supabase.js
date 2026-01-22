@@ -223,9 +223,12 @@ const loadExplore = async () => {
   const grid = document.querySelector('[data-clips-grid]');
   if (!grid) return;
 
+  const baseSelect = 'id,title,created_at,visibility,thumb_path,duration,duration_seconds,likes_count,views_count,allow_downloads,allow_embed,clip_slug,clip_secret';
+  const fullSelect = `${baseSelect},profiles(id,username),clip_tags(tags(name))`;
+
   let query = supabaseClient
     .from('clips')
-    .select('id,title,created_at,visibility,thumb_path,duration,duration_seconds,likes_count,views_count,allow_downloads,allow_embed,clip_slug,clip_secret,profiles(id,username),clip_tags(tags(name))')
+    .select(fullSelect)
     .eq('visibility', 'public');
 
   const { text, tags } = parseSearch(exploreState.search);
@@ -233,11 +236,17 @@ const loadExplore = async () => {
     query = query.ilike('title', `%${text}%`);
   }
 
-  const { data, error } = await query.limit(80);
+  let { data, error } = await query.limit(80);
   if (error) {
     console.error(error);
     showToast(`Explore error: ${error.message}`);
-    return;
+    // Fallback: fetch without joins if RLS blocks related tables
+    const fallback = await supabaseClient
+      .from('clips')
+      .select(baseSelect)
+      .eq('visibility', 'public')
+      .limit(80);
+    data = fallback.data || [];
   }
 
   let filtered = data || [];
@@ -762,7 +771,7 @@ const setupAuthForms = () => {
   }
 
   if (!supabaseClient) {
-    const msg = 'Supabase client failed to load. Check that supabaseClient.js and the CDN script are loading.';
+    const msg = 'Supabase client failed to load. Check that supabase.js and the CDN script are loading.';
     setMessage(loginForm, msg, true);
     setMessage(signupForm, msg, true);
     return;
@@ -1215,7 +1224,7 @@ const setupSettings = async () => {
     }
 
     if (action === 'delete-account') {
-      alert('Delete account requires admin privileges in supabaseClient.');
+      alert('Delete account requires admin privileges in Supabase.');
     }
   });
 };
