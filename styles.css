@@ -600,6 +600,22 @@ body.page-enter .page {
   border-radius: 50%;
   background: var(--deep-gray);
   border: 1px solid var(--border-gray);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-white);
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.creator-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.creator-link:hover {
+  color: var(--text-white);
 }
 
 .section {

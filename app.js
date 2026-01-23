@@ -171,7 +171,8 @@ window.veloStagger = {
 };
 
 modalTriggers.forEach((trigger) => {
-  trigger.addEventListener('click', () => {
+  trigger.addEventListener('click', (event) => {
+    if (event.target.closest('[data-no-modal]')) return;
     const card = trigger.closest('[data-clip-id]');
     if (card) {
       const modalFollow = document.querySelector('[data-follow-btn]');

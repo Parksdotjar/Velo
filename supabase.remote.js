@@ -2,12 +2,12 @@
 const SUPABASE_URL = 'https://juagusbfswxcwenzegfg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1YWd1c2Jmc3d4Y3dlbnplZ2ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMzk5NzksImV4cCI6MjA4NDYxNTk3OX0.fe76LO6mVP9Okqj9JNhr2EQF7mx-o6F95QrEIOz8yaw';
 
-const supabaseClient = window.supabase?.createClient - window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+const supabaseClient = window.supabase?.createClient ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 const page = document.body.getAttribute('data-page');
 const getBaseUrl = () => {
   const path = window.location.pathname;
-  const base = path.endsWith('/') - path : path.replace(/[^/]*$/, '');
+  const base = path.endsWith('/') ? path : path.replace(/[^/]*$/, '');
   return `${window.location.origin}${base}`;
 };
 const AUTH_REDIRECT = `${getBaseUrl()}login.html`;
@@ -23,7 +23,7 @@ const setDebugStatus = (key, ok, text) => {
   if (!el) return;
   el.textContent = text;
   el.classList.remove('ok', 'bad');
-  el.classList.add(ok - 'ok' : 'bad');
+  el.classList.add(ok ? 'ok' : 'bad');
 };
 
 const initDebugBanner = () => {
@@ -41,9 +41,9 @@ const initDebugBanner = () => {
   debugState.banner = banner;
 
   const originOk = !isUnsupportedOrigin();
-  setDebugStatus('origin', originOk, originOk - window.location.origin : 'invalid origin');
-  setDebugStatus('cdn', Boolean(window.supabase?.createClient), window.supabase?.createClient - 'loaded' : 'missing');
-  setDebugStatus('client', Boolean(supabaseClient), supabaseClient - 'ready' : 'null');
+  setDebugStatus('origin', originOk, originOk ? window.location.origin : 'invalid origin');
+  setDebugStatus('cdn', Boolean(window.supabase?.createClient), window.supabase?.createClient ? 'loaded' : 'missing');
+  setDebugStatus('client', Boolean(supabaseClient), supabaseClient ? 'ready' : 'null');
   setDebugStatus('auth', false, 'unknown');
 };
 
@@ -58,8 +58,8 @@ const showToast = (message) => {
 };
 
 const setAuthState = (session) => {
-  document.body.setAttribute('data-auth', session - 'logged-in' : 'logged-out');
-  setDebugStatus('auth', Boolean(session), session - 'logged-in' : 'logged-out');
+  document.body.setAttribute('data-auth', session ? 'logged-in' : 'logged-out');
+  setDebugStatus('auth', Boolean(session), session ? 'logged-in' : 'logged-out');
 };
 
 const fetchSession = async () => {
@@ -134,19 +134,19 @@ const buildClipCard = (clip) => {
   const creatorId = clip.profiles?.id || '';
   const time = formatTimeAgo(clip.created_at);
   const thumbUrl = clip.thumb_path
-    - `${SUPABASE_URL}/storage/v1/object/public/thumbs/${clip.thumb_path}`
+    ? `${SUPABASE_URL}/storage/v1/object/public/thumbs/${clip.thumb_path}`
     : '';
-  const likesCount = clip.likes_count -- 0;
+  const likesCount = clip.likes_count ?? 0;
   const likeIcon = 'sprite.svg#icon-heart';
 
   return `
     <article class="clip-card" data-open-modal data-clip-id="${clip.id}" data-user-id="${creatorId}">
-      <div class="clip-thumb" style="${thumbUrl - `background-image: url('${thumbUrl}'); background-size: cover; background-position: center;` : ''}">
+      <div class="clip-thumb" style="${thumbUrl ? `background-image: url('${thumbUrl}'); background-size: cover; background-position: center;` : ''}">
         <div class="thumb-overlay">${clip.duration || '00:00'}</div>
       </div>
       <div class="clip-meta">
         <h3>${clip.title || 'Untitled Clip'}</h3>
-        <span><a class="creator-link" data-no-modal href="profile.html?user=${encodeURIComponent(creator)}">@${creator}</a> - ${time}</span>
+        <span>@${creator} � ${time}</span>
       </div>
       <div class="tag-row">
         ${tags.slice(0, 3).map((tag) => `<span class="tag">#${tag}</span>`).join('')}
@@ -163,7 +163,7 @@ const buildClipCard = (clip) => {
           <button class="icon-button" data-action="share" aria-label="Share">
             <svg class="icon"><use href="sprite.svg#icon-share"></use></svg>
           </button>
-          ${clip.allow_downloads - `
+          ${clip.allow_downloads ? `
           <button class="icon-button" data-action="download" aria-label="Download">
             <svg class="icon"><use href="sprite.svg#icon-download"></use></svg>
           </button>
@@ -179,14 +179,14 @@ const buildClipCard = (clip) => {
 
 const buildDashboardCard = (clip) => {
   const thumbUrl = clip.thumb_path
-    - `${SUPABASE_URL}/storage/v1/object/public/thumbs/${clip.thumb_path}`
+    ? `${SUPABASE_URL}/storage/v1/object/public/thumbs/${clip.thumb_path}`
     : '';
   return `
     <article class="clip-card" data-clip-id="${clip.id}">
-      <div class="clip-thumb" style="${thumbUrl - `background-image: url('${thumbUrl}'); background-size: cover; background-position: center;` : ''}"></div>
+      <div class="clip-thumb" style="${thumbUrl ? `background-image: url('${thumbUrl}'); background-size: cover; background-position: center;` : ''}"></div>
       <div class="clip-meta">
         <h3>${clip.title || 'Untitled Clip'}</h3>
-        <span>${clip.visibility} - ${formatTimeAgo(clip.created_at)}</span>
+        <span>${clip.visibility} � ${formatTimeAgo(clip.created_at)}</span>
       </div>
       <div class="tag-row">
         <button class="button-secondary" data-action="edit">Edit</button>
@@ -325,7 +325,7 @@ const setupExploreFilters = () => {
       if (chip.dataset.duration) {
         document.querySelectorAll('[data-duration]').forEach((c) => c.classList.remove('active'));
         chip.classList.add('active');
-        exploreState.duration = chip.dataset.duration === '60+' - '60-+' : chip.dataset.duration;
+        exploreState.duration = chip.dataset.duration === '60+' ? '60-+' : chip.dataset.duration;
       }
 
       if (chip.dataset.tag) {
@@ -420,7 +420,7 @@ const loadCollections = async () => {
       <div class="clip-thumb"></div>
       <div class="clip-meta">
         <h3>${col.title}</h3>
-        <span>${col.visibility} - ${formatTimeAgo(col.created_at)}</span>
+        <span>${col.visibility} � ${formatTimeAgo(col.created_at)}</span>
       </div>
     </article>
   `).join('');
@@ -490,18 +490,12 @@ const loadProfile = async () => {
   const params = new URLSearchParams(window.location.search);
   const username = params.get('user');
   const userId = params.get('id');
-  let resolvedUserId = userId;
-  let resolvedUsername = username;
 
-  if (!resolvedUserId && !resolvedUsername) {
-    const session = await fetchSession();
-    if (!session) return;
-    resolvedUserId = session.user.id;
-  }
+  if (!username && !userId) return;
 
-  const profileQuery = resolvedUserId
-    - supabaseClient.from('profiles').select('*').eq('id', resolvedUserId).single()
-    : supabaseClient.from('profiles').select('*').eq('username', resolvedUsername).single();
+  const profileQuery = userId
+    ? supabaseClient.from('profiles').select('*').eq('id', userId).single()
+    : supabaseClient.from('profiles').select('*').eq('username', username).single();
 
   const { data: profile } = await profileQuery;
   if (!profile) return;
@@ -517,17 +511,10 @@ const loadProfile = async () => {
   if (nameEl) nameEl.textContent = profile.display_name || profile.username;
   if (userEl) userEl.textContent = `@${profile.username}`;
   if (bioEl) bioEl.textContent = profile.bio || '';
-  if (avatarEl) {
-    if (profile.avatar_url) {
-      avatarEl.style.backgroundImage = `url('${profile.avatar_url}')`;
-      avatarEl.style.backgroundSize = 'cover';
-      avatarEl.style.backgroundPosition = 'center';
-      avatarEl.textContent = '';
-    } else {
-      const initial = (profile.display_name || profile.username || 'V').trim().charAt(0).toUpperCase();
-      avatarEl.style.backgroundImage = '';
-      avatarEl.textContent = initial || 'V';
-    }
+  if (avatarEl && profile.avatar_url) {
+    avatarEl.style.backgroundImage = `url('${profile.avatar_url}')`;
+    avatarEl.style.backgroundSize = 'cover';
+    avatarEl.style.backgroundPosition = 'center';
   }
   if (followBtn) followBtn.setAttribute('data-follow-id', profile.id);
 
@@ -570,7 +557,7 @@ const loadClipPage = async () => {
   if (creatorEl) creatorEl.textContent = '@creator';
   if (embedEl) {
     const url = clip.visibility === 'unlisted'
-      - `${getBaseUrl()}clip.html?slug=${clip.clip_slug}&secret=${clip.clip_secret}`
+      ? `${getBaseUrl()}clip.html?slug=${clip.clip_slug}&secret=${clip.clip_secret}`
       : `${getBaseUrl()}clip.html?id=${clip.id}`;
     embedEl.textContent = `<iframe src=\"${url}\" width=\"640\" height=\"360\" frameborder=\"0\"></iframe>`;
     if (copyBtn) copyBtn.onclick = async () => {
@@ -635,7 +622,7 @@ const setupClipActions = () => {
       const isActive = likeBtn.getAttribute('aria-pressed') === 'true';
       const countEl = card.querySelector('.like-count');
       const iconUse = likeBtn.querySelector('[data-like-icon] use');
-      const currentCount = countEl - Number(countEl.textContent) : 0;
+      const currentCount = countEl ? Number(countEl.textContent) : 0;
       if (isActive) {
         await supabaseClient.from('likes').delete().eq('clip_id', clipId).eq('user_id', session.user.id);
         likeBtn.setAttribute('aria-pressed', 'false');
@@ -670,7 +657,7 @@ const setupClipActions = () => {
       const clip = clipCache.get(clipId);
       if (clip) {
         const shareUrl = clip.visibility === 'unlisted'
-          - `${getBaseUrl()}clip.html?slug=${clip.clip_slug}&secret=${clip.clip_secret}`
+          ? `${getBaseUrl()}clip.html?slug=${clip.clip_slug}&secret=${clip.clip_secret}`
           : `${getBaseUrl()}clip.html?id=${clip.id}`;
         await navigator.clipboard.writeText(shareUrl);
         showToast('Link copied');
@@ -724,10 +711,10 @@ const setupClipActions = () => {
       const clipId = card.getAttribute('data-clip-id');
       if (!clipId) return;
       const meta = card.querySelector('.clip-meta span');
-      const current = meta?.textContent?.split(' - ')[0] || 'public';
-      const next = current === 'public' - 'unlisted' : current === 'unlisted' - 'private' : 'public';
+      const current = meta?.textContent?.split(' � ')[0] || 'public';
+      const next = current === 'public' ? 'unlisted' : current === 'unlisted' ? 'private' : 'public';
       await supabaseClient.from('clips').update({ visibility: next }).eq('id', clipId);
-      if (meta) meta.textContent = `${next} - just now`;
+      if (meta) meta.textContent = `${next} � just now`;
     }
 
     if (card && event.target.closest('[data-action="pin"]')) {
@@ -824,7 +811,7 @@ const setupAuthForms = () => {
     const box = form?.querySelector('[data-auth-message]');
     if (!box) return;
     box.textContent = message;
-    box.style.color = isError - 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.7)';
+    box.style.color = isError ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.7)';
   };
 
   if (isUnsupportedOrigin()) {
@@ -854,7 +841,7 @@ const setupAuthForms = () => {
         const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error) {
           const msg = error.message.includes('Email not confirmed')
-            - 'Please confirm your email before logging in.'
+            ? 'Please confirm your email before logging in.'
             : error.message;
           setMessage(loginForm, msg, true);
           return;
@@ -1116,7 +1103,7 @@ const hydrateModal = (clipId) => {
     followBtn.textContent = 'Follow';
     followBtn.setAttribute('aria-pressed', 'false');
   }
-  if (downloadBtn) downloadBtn.style.display = clip.allow_downloads - 'inline-flex' : 'none';
+  if (downloadBtn) downloadBtn.style.display = clip.allow_downloads ? 'inline-flex' : 'none';
 };
 
 const setupModalActions = () => {
@@ -1138,7 +1125,7 @@ const setupModalActions = () => {
       const clip = clipCache.get(activeClipId);
       if (!clip) return;
       const shareUrl = clip.visibility === 'unlisted'
-        - `${getBaseUrl()}clip.html?slug=${clip.clip_slug}&secret=${clip.clip_secret}`
+        ? `${getBaseUrl()}clip.html?slug=${clip.clip_slug}&secret=${clip.clip_secret}`
         : `${getBaseUrl()}clip.html?id=${clip.id}`;
       await navigator.clipboard.writeText(shareUrl);
       showToast('Link copied');
@@ -1148,22 +1135,12 @@ const setupModalActions = () => {
       const clip = clipCache.get(activeClipId);
       if (!clip) return;
       const url = `${SUPABASE_URL}/storage/v1/object/public/clips/${clip.video_path}`;
-      try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Download failed');
-        const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const anchor = document.createElement('a');
-        anchor.href = blobUrl;
-        anchor.download = clip.video_path?.split('/').pop() || 'velo-clip';
-        document.body.appendChild(anchor);
-        anchor.click();
-        anchor.remove();
-        URL.revokeObjectURL(blobUrl);
-      } catch (err) {
-        console.error(err);
-        showToast('Download failed');
-      }
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = clip.video_path?.split('/').pop() || 'velo-clip';
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
     }
 
     if (reportBtn && activeClipId) {
@@ -1177,7 +1154,7 @@ const setupModalActions = () => {
     }
 
     if ((likeBtn || saveBtn) && activeClipId) {
-      document.querySelector(`[data-clip-id="${activeClipId}"] ${likeBtn - '[data-action="like"]' : '[data-action="save"]'}`)?.click();
+      document.querySelector(`[data-clip-id="${activeClipId}"] ${likeBtn ? '[data-action="like"]' : '[data-action="save"]'}`)?.click();
     }
   });
 };
@@ -1191,7 +1168,7 @@ const setupDashboardTabs = () => {
       tab.classList.add('active');
       const target = tab.dataset.tab;
       panels.forEach((panel) => {
-        panel.style.display = panel.dataset.tabPanel === target - '' : 'none';
+        panel.style.display = panel.dataset.tabPanel === target ? '' : 'none';
       });
       if (target === 'collections') loadCollections();
       if (target === 'saved') loadSaved();
@@ -1248,9 +1225,9 @@ const setupSettings = async () => {
       if (!key) return;
       let value;
       if (key === 'default_visibility') {
-        value = input.checked - 'public' : 'private';
+        value = input.checked ? 'public' : 'private';
       } else if (key === 'default_speed') {
-        value = input.checked - 1.25 : 1.0;
+        value = input.checked ? 1.25 : 1.0;
       } else {
         value = input.checked;
       }
@@ -1334,7 +1311,7 @@ const loadAdmin = async () => {
   list.innerHTML = (data || []).map((rep) => `
     <div class="list-item">
       <div>
-        <strong>Report ${rep.clip_id - `Clip` : 'User'}</strong>
+        <strong>Report ${rep.clip_id ? `Clip` : 'User'}</strong>
         <div class="footer-note">Reason: ${rep.reason} - ${formatTimeAgo(rep.created_at)}</div>
       </div>
       <div class="tag-row">
