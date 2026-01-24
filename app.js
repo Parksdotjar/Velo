@@ -120,6 +120,11 @@ const buildGroups = () => {
 };
 
 const prepareStagger = () => {
+  document.querySelectorAll('.stagger-item').forEach((item) => {
+    item.classList.remove('stagger-item', 'reveal', 'leave');
+    item.style.animationDelay = '';
+  });
+
   const groups = buildGroups();
   const nonCardGroups = groups.filter((group) => group.type !== 'card');
   const cardGroups = groups.filter((group) => group.type === 'card');
