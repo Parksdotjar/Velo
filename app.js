@@ -161,11 +161,6 @@ const prepareStagger = () => {
     cardStart += items.length * cardItemDelay + cardGap;
   });
 
-  document.querySelectorAll('.clip-card *').forEach((item) => {
-    item.classList.remove('stagger-item', 'reveal', 'leave');
-    item.style.animationDelay = '';
-  });
-
   flatItems = groups.flatMap((group) => group.items || group);
 };
 
