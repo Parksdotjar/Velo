@@ -70,6 +70,61 @@ const fetchSession = async () => {
   return data.session;
 };
 
+const sanitizeUsername = (value) => {
+  const cleaned = (value || '').toLowerCase().replace(/[^a-z0-9_]+/g, '');
+  return cleaned || 'user';
+};
+
+const deriveUsername = (session) => {
+  const meta = session?.user?.user_metadata || {};
+  const raw = meta.username || meta.user_name || meta.preferred_username || meta.name || '';
+  const emailBase = session?.user?.email ? session.user.email.split('@')[0] : '';
+  return sanitizeUsername(raw || emailBase || 'user');
+};
+
+const ensureProfile = async (session) => {
+  if (!session || !supabaseClient) return null;
+  const { data: existing } = await supabaseClient
+    .from('profiles')
+    .select('id,username')
+    .eq('id', session.user.id)
+    .maybeSingle();
+
+  if (existing) return existing;
+
+  const base = deriveUsername(session);
+  const candidates = [
+    base,
+    `${base}_${session.user.id.slice(0, 6)}`,
+    `${base}_${Math.random().toString(36).slice(2, 6)}`
+  ];
+
+  for (const candidate of candidates) {
+    const { data: taken } = await supabaseClient
+      .from('profiles')
+      .select('id')
+      .eq('username', candidate)
+      .maybeSingle();
+
+    if (taken) continue;
+
+    const displayName =
+      session.user.user_metadata?.display_name ||
+      session.user.user_metadata?.full_name ||
+      candidate;
+
+    const { data: created, error } = await supabaseClient
+      .from('profiles')
+      .insert({ id: session.user.id, username: candidate, display_name: displayName })
+      .select()
+      .single();
+
+    if (!error) return created;
+  }
+
+  return null;
+};
+
 if (supabaseClient) {
   supabaseClient.auth.onAuthStateChange((_event, session) => {
     setAuthState(session);
@@ -987,6 +1042,8 @@ const setupUpload = () => {
     event.preventDefault();
     const session = await fetchSession();
     if (!session) return alert('Please log in first.');
+    const profile = await ensureProfile(session);
+    if (!profile) return alert('Profile setup failed. Please try again.');
 
     const file = fileInput.files[0];
     if (!file) return alert('Select a video file.');
@@ -1371,7 +1428,10 @@ const bootstrap = async () => {
     return;
   }
 
-  await fetchSession();
+  const session = await fetchSession();
+  if (session) {
+    await ensureProfile(session);
+  }
   document.body.setAttribute('data-auth-ready', 'true');
   setupAuthForms();
   setupUpload();
