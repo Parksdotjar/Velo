@@ -1114,6 +1114,7 @@ const hydrateModal = (clipId) => {
   const creatorEl = document.querySelector('[data-modal-creator]');
   const followBtn = document.querySelector('.modal [data-follow-id]');
   const downloadBtn = document.querySelector('[data-modal-download]');
+  const player = document.querySelector('[data-modal-player]');
 
   if (titleEl) titleEl.textContent = clip.title || 'Untitled Clip';
   if (creatorEl) creatorEl.textContent = `@${clip.profiles?.username || 'creator'}`;
@@ -1127,6 +1128,10 @@ const hydrateModal = (clipId) => {
     followBtn.setAttribute('aria-pressed', 'false');
   }
   if (downloadBtn) downloadBtn.style.display = clip.allow_downloads ? 'inline-flex' : 'none';
+  if (player) {
+    const url = `${SUPABASE_URL}/storage/v1/object/public/clips/${clip.video_path}`;
+    player.innerHTML = `<video src="${url}" controls playsinline style="width:100%; height:100%; border-radius:16px;"></video>`;
+  }
 };
 
 const setupModalActions = () => {

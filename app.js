@@ -42,11 +42,15 @@ const getDomOrder = (items) => {
 const openModal = () => {
   if (!modal) return;
   modal.classList.add('active');
+  document.body.classList.add('modal-open');
 };
 
 const closeModal = () => {
   if (!modal) return;
   modal.classList.remove('active');
+  document.body.classList.remove('modal-open');
+  const player = document.querySelector('[data-modal-player]');
+  if (player) player.innerHTML = 'Fullscreen Clip Player';
 };
 
 const buildGroups = () => {
