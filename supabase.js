@@ -36,6 +36,7 @@ const initDebugBanner = () => {
     <div class="debug-row"><span>Supabase CDN</span><span class="debug-status" data-debug="cdn"></span></div>
     <div class="debug-row"><span>Supabase Client</span><span class="debug-status" data-debug="client"></span></div>
     <div class="debug-row"><span>Auth State</span><span class="debug-status" data-debug="auth"></span></div>
+    <div class="debug-row"><span>Explore Clips</span><span class="debug-status" data-debug="explore"></span></div>
   `;
   document.body.appendChild(banner);
   debugState.banner = banner;
@@ -266,6 +267,10 @@ const loadExplore = async () => {
   }
 
   let filtered = data || [];
+  if (debugState.banner) {
+    const count = filtered.length;
+    setDebugStatus('explore', true, `${count} loaded`);
+  }
 
   if (exploreState.tag) {
     filtered = filtered.filter((clip) =>
