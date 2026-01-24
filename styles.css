@@ -302,6 +302,14 @@ body.page-enter .page {
   transition: border 0.2s ease, transform 0.2s ease;
 }
 
+.clip-card .stagger-item {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  animation: none;
+  will-change: auto;
+}
+
 .stagger-item {
   opacity: 0;
   transform: translateY(18px);
