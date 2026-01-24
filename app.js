@@ -98,11 +98,9 @@ const buildGroups = () => {
         (item) => !used.has(item)
       );
       cards.forEach((card) => {
-        const cardItems = getDomOrder([card, ...card.querySelectorAll('*')]);
-        const filtered = cardItems.filter((item) => !used.has(item));
-        if (filtered.length) {
-          groups.push({ items: filtered, type: 'card' });
-          filtered.forEach((item) => used.add(item));
+        if (!used.has(card)) {
+          groups.push({ items: [card], type: 'card' });
+          used.add(card);
         }
       });
     });
