@@ -36,6 +36,8 @@ const initDebugBanner = () => {
     <div class="debug-row"><span>Supabase CDN</span><span class="debug-status" data-debug="cdn"></span></div>
     <div class="debug-row"><span>Supabase Client</span><span class="debug-status" data-debug="client"></span></div>
     <div class="debug-row"><span>Auth State</span><span class="debug-status" data-debug="auth"></span></div>
+    <div class="debug-row"><span>Auth UID</span><span class="debug-status" data-debug="uid"></span></div>
+    <div class="debug-row"><span>Profile Row</span><span class="debug-status" data-debug="profile"></span></div>
     <div class="debug-row"><span>Explore Clips</span><span class="debug-status" data-debug="explore"></span></div>
   `;
   document.body.appendChild(banner);
@@ -67,6 +69,10 @@ const fetchSession = async () => {
   if (!supabaseClient) return null;
   const { data } = await supabaseClient.auth.getSession();
   setAuthState(data.session);
+  if (debugState.banner) {
+    const uid = data.session?.user?.id || 'none';
+    setDebugStatus('uid', Boolean(data.session), uid);
+  }
   return data.session;
 };
 
@@ -90,7 +96,12 @@ const ensureProfile = async (session) => {
     .eq('id', session.user.id)
     .maybeSingle();
 
-  if (existing) return existing;
+  if (existing) {
+    if (debugState.banner) {
+      setDebugStatus('profile', true, `found ${existing.username || 'user'}`);
+    }
+    return existing;
+  }
 
   const base = deriveUsername(session);
   const candidates = [
@@ -119,9 +130,17 @@ const ensureProfile = async (session) => {
       .select()
       .single();
 
-    if (!error) return created;
+    if (!error) {
+      if (debugState.banner) {
+        setDebugStatus('profile', true, `created ${candidate}`);
+      }
+      return created;
+    }
   }
 
+  if (debugState.banner) {
+    setDebugStatus('profile', false, 'missing');
+  }
   return null;
 };
 
