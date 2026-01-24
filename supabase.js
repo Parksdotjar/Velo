@@ -89,6 +89,16 @@ const formatTimeAgo = (dateString) => {
 };
 
 const randomSecret = () => Math.random().toString(36).slice(2, 10);
+const safeFileName = (name) => {
+  const parts = name.split('.');
+  const ext = parts.length > 1 ? `.${parts.pop().toLowerCase()}` : '';
+  const base = parts.join('.')
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60) || 'clip';
+  return `${base}${ext}`;
+};
 
 const selectFile = (accept) => {
   return new Promise((resolve) => {
@@ -763,14 +773,14 @@ const setupClipActions = () => {
       const session = await fetchSession();
       if (!session) return;
 
-      const fileName = `${session.user.id}/${Date.now()}-${file.name}`;
+      const fileName = `${session.user.id}/${Date.now()}-${safeFileName(file.name)}`;
       const { error: uploadError } = await supabaseClient.storage.from('clips').upload(fileName, file);
       if (uploadError) return alert(uploadError.message);
 
       const { blob, duration } = await createThumbnail(file);
       let thumbPath = null;
       if (blob) {
-        const thumbName = `${session.user.id}/${Date.now()}-${file.name}.jpg`;
+        const thumbName = `${session.user.id}/${Date.now()}-${safeFileName(file.name)}.jpg`;
         const { error: thumbErr } = await supabaseClient.storage.from('thumbs').upload(thumbName, blob);
         if (!thumbErr) thumbPath = thumbName;
       }
@@ -800,7 +810,7 @@ const setupClipActions = () => {
       const session = await fetchSession();
       if (!session) return;
 
-      const thumbName = `${session.user.id}/${Date.now()}-${file.name}`;
+      const thumbName = `${session.user.id}/${Date.now()}-${safeFileName(file.name)}`;
       const { error: thumbErr } = await supabaseClient.storage.from('thumbs').upload(thumbName, file);
       if (thumbErr) return alert(thumbErr.message);
 
@@ -988,7 +998,7 @@ const setupUpload = () => {
     if (statusText) statusText.textContent = 'Uploading...';
     if (progressBar) progressBar.style.width = '20%';
 
-    const fileName = `${session.user.id}/${Date.now()}-${file.name}`;
+    const fileName = `${session.user.id}/${Date.now()}-${safeFileName(file.name)}`;
     const { error: uploadError } = await supabaseClient.storage.from('clips').upload(fileName, file);
     if (uploadError) return alert(uploadError.message);
 
@@ -998,7 +1008,7 @@ const setupUpload = () => {
     const { blob, duration } = await createThumbnail(file);
     let thumbPath = null;
     if (blob) {
-      const thumbName = `${session.user.id}/${Date.now()}-${file.name}.jpg`;
+      const thumbName = `${session.user.id}/${Date.now()}-${safeFileName(file.name)}.jpg`;
       const { error: thumbErr } = await supabaseClient.storage.from('thumbs').upload(thumbName, blob);
       if (!thumbErr) thumbPath = thumbName;
     }
