@@ -27,6 +27,19 @@ const getBuildVersion = () => {
   }
 };
 
+const loadBuildVersion = async (badge) => {
+  try {
+    const response = await fetch(`build.json?ts=${Date.now()}`, { cache: 'no-store' });
+    if (!response.ok) return false;
+    const data = await response.json();
+    if (!data || !data.version) return false;
+    badge.textContent = `Build v${data.version}`;
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
+
 const showBuildBadge = () => {
   if (document.querySelector('.version-badge')) return;
   const version = getBuildVersion();
@@ -34,6 +47,7 @@ const showBuildBadge = () => {
   badge.className = 'version-badge';
   badge.textContent = version ? `Build v${version}` : 'Build (no version)';
   document.body.appendChild(badge);
+  loadBuildVersion(badge);
 };
 
 const isLoggedIn = () => document.body.getAttribute('data-auth') === 'logged-in';
