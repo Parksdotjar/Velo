@@ -473,7 +473,7 @@ body.page-enter .page {
 .preview-loader {
   position: absolute;
   inset: 0;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.6);
@@ -493,10 +493,22 @@ body.page-enter .page {
 
 .dropzone.is-loading .preview-loader,
 .dropzone.is-loading .preview-loader.stagger-item,
-.dropzone.is-loading .preview-loader.stagger-item.reveal {
-  opacity: 1;
+.dropzone.is-loading .preview-loader.stagger-item.reveal,
+.dropzone.loading-out .preview-loader,
+.dropzone.loading-out .preview-loader.stagger-item,
+.dropzone.loading-out .preview-loader.stagger-item.reveal {
+  display: flex;
   visibility: visible;
   pointer-events: auto;
+}
+
+.dropzone.is-loading .preview-loader {
+  opacity: 1;
+  transition: opacity 0.35s ease;
+}
+
+.dropzone.loading-out .preview-loader {
+  opacity: 0;
   transition: opacity 0.35s ease;
 }
 

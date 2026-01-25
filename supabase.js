@@ -1090,6 +1090,7 @@ const setupUpload = () => {
       if (!file || !dropzone || !previewVideo) return;
       const previousUrl = previewVideo.dataset.previewUrl;
       if (previousUrl) URL.revokeObjectURL(previousUrl);
+      dropzone.classList.remove('loading-out');
       dropzone.classList.add('is-loading');
       dropzone.classList.remove('has-preview');
       const url = URL.createObjectURL(file);
@@ -1099,10 +1100,13 @@ const setupUpload = () => {
         dropzone.classList.add('has-preview');
         requestAnimationFrame(() => {
           dropzone.classList.remove('is-loading');
+          dropzone.classList.add('loading-out');
+          setTimeout(() => dropzone.classList.remove('loading-out'), 380);
         });
       };
       previewVideo.onerror = () => {
         dropzone.classList.remove('is-loading');
+        dropzone.classList.remove('loading-out');
         dropzone.classList.remove('has-preview');
       };
     });
