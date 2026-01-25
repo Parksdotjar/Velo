@@ -949,6 +949,10 @@ body[data-stagger="on"] main * {
   visibility: hidden;
 }
 
+body[data-stagger="on"] .clip-card * {
+  visibility: visible;
+}
+
 
 .navbar.stagger-item.reveal {
   animation: fade-up-navbar 0.8s ease forwards;
