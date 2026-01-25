@@ -213,6 +213,53 @@ const createThumbnail = (file) => {
   });
 };
 
+const getPublishOverlay = () => {
+  let overlay = document.querySelector('[data-publish-overlay]');
+  if (overlay) return overlay;
+  overlay = document.createElement('div');
+  overlay.className = 'upload-publish-overlay';
+  overlay.setAttribute('data-publish-overlay', '');
+  overlay.innerHTML = `
+    <div class="publish-stack">
+      <div class="cube publish-cube" aria-label="Publishing">
+        <div class="cube-face front"></div>
+        <div class="cube-face back"></div>
+        <div class="cube-face right"></div>
+        <div class="cube-face left"></div>
+        <div class="cube-face top"></div>
+        <div class="cube-face bottom"></div>
+      </div>
+      <div class="publish-text">PUBLISHED</div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  return overlay;
+};
+
+const startPublishOverlay = () => {
+  const overlay = getPublishOverlay();
+  overlay.classList.remove('show-text', 'hide');
+  overlay.classList.add('active');
+};
+
+const finishPublishOverlay = (onDone) => {
+  const overlay = getPublishOverlay();
+  overlay.classList.add('show-text');
+  setTimeout(() => {
+    overlay.classList.add('hide');
+    setTimeout(() => {
+      overlay.classList.remove('active', 'show-text', 'hide');
+      if (onDone) onDone();
+    }, 400);
+  }, 1500);
+};
+
+const hidePublishOverlay = () => {
+  const overlay = document.querySelector('[data-publish-overlay]');
+  if (!overlay) return;
+  overlay.classList.remove('active', 'show-text', 'hide');
+};
+
 const buildClipCard = (clip) => {
   const tags = (clip.clip_tags || []).map((ct) => ct.tags?.name).filter(Boolean);
   const creator = clip.profiles?.username || 'unknown';
@@ -1044,15 +1091,19 @@ const setupUpload = () => {
       const previousUrl = previewVideo.dataset.previewUrl;
       if (previousUrl) URL.revokeObjectURL(previousUrl);
       dropzone.classList.add('is-loading');
-      dropzone.classList.add('has-preview');
+      dropzone.classList.remove('has-preview');
       const url = URL.createObjectURL(file);
       previewVideo.dataset.previewUrl = url;
       previewVideo.src = url;
       previewVideo.onloadeddata = () => {
-        dropzone.classList.remove('is-loading');
+        dropzone.classList.add('has-preview');
+        requestAnimationFrame(() => {
+          dropzone.classList.remove('is-loading');
+        });
       };
       previewVideo.onerror = () => {
         dropzone.classList.remove('is-loading');
+        dropzone.classList.remove('has-preview');
       };
     });
   }
@@ -1067,6 +1118,7 @@ const setupUpload = () => {
     const file = fileInput.files[0];
     if (!file) return alert('Select a video file.');
 
+    startPublishOverlay();
     const title = uploadForm.querySelector('[name="title"]').value.trim();
     const description = uploadForm.querySelector('[name="description"]').value.trim();
     const visibility = uploadForm.querySelector('[name="visibility"]:checked')?.value || 'public';
@@ -1081,7 +1133,10 @@ const setupUpload = () => {
 
     const fileName = `${session.user.id}/${Date.now()}-${safeFileName(file.name)}`;
     const { error: uploadError } = await supabaseClient.storage.from('clips').upload(fileName, file);
-    if (uploadError) return alert(uploadError.message);
+    if (uploadError) {
+      hidePublishOverlay();
+      return alert(uploadError.message);
+    }
 
     if (progressBar) progressBar.style.width = '60%';
     if (statusText) statusText.textContent = 'Generating thumbnail...';
@@ -1116,7 +1171,10 @@ const setupUpload = () => {
       clip_secret: clipSecret
     }).select().single();
 
-    if (clipError) return alert(clipError.message);
+    if (clipError) {
+      hidePublishOverlay();
+      return alert(clipError.message);
+    }
 
     for (const tag of tags) {
       const { data: tagRow } = await supabaseClient.from('tags').upsert({ name: tag }).select().single();
@@ -1127,7 +1185,9 @@ const setupUpload = () => {
 
     if (progressBar) progressBar.style.width = '100%';
     if (statusText) statusText.textContent = 'Published.';
-    window.location.href = 'dashboard.html';
+    finishPublishOverlay(() => {
+      window.location.href = 'dashboard.html';
+    });
   });
 };
 const hydrateFollows = async () => {
