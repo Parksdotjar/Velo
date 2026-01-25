@@ -16,6 +16,26 @@ const authBlocker = (() => {
   return blocker;
 })();
 
+const getBuildVersion = () => {
+  const script = document.querySelector('script[src*="app.js"]');
+  if (!script) return null;
+  try {
+    const url = new URL(script.src, window.location.href);
+    return url.searchParams.get('v');
+  } catch (error) {
+    return null;
+  }
+};
+
+const showBuildBadge = () => {
+  if (document.querySelector('.version-badge')) return;
+  const version = getBuildVersion();
+  const badge = document.createElement('div');
+  badge.className = 'version-badge';
+  badge.textContent = version ? `Build v${version}` : 'Build (no version)';
+  document.body.appendChild(badge);
+};
+
 const isLoggedIn = () => document.body.getAttribute('data-auth') === 'logged-in';
 const isAuthReady = () => document.body.getAttribute('data-auth-ready') === 'true';
 
@@ -254,6 +274,7 @@ const dismissLoader = (delay = 900, callback) => {
 
 document.addEventListener('DOMContentLoaded', () => {
   document.body.classList.add('page-enter');
+  showBuildBadge();
   prepareStagger();
   if (!loader) {
     document.body.classList.add('is-loaded');
