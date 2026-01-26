@@ -1153,22 +1153,56 @@ const setupUpload = () => {
     if (allowEmbed) allowEmbed.checked = Boolean(profile.default_allow_embed);
   });
 
+  const handleSelectedFile = (file) => {
+    if (!file || !dropzone || !previewVideo) return;
+    const previousUrl = previewVideo.dataset.previewUrl;
+    if (previousUrl) URL.revokeObjectURL(previousUrl);
+    dropzone.classList.remove('has-preview');
+    const url = URL.createObjectURL(file);
+    previewVideo.dataset.previewUrl = url;
+    previewVideo.src = url;
+    previewVideo.onloadeddata = () => {
+      dropzone.classList.add('has-preview');
+    };
+    previewVideo.onerror = () => {
+      dropzone.classList.remove('has-preview');
+    };
+  };
+
   if (fileInput) {
     fileInput.addEventListener('change', () => {
-      const file = fileInput.files[0];
-      if (!file || !dropzone || !previewVideo) return;
-      const previousUrl = previewVideo.dataset.previewUrl;
-      if (previousUrl) URL.revokeObjectURL(previousUrl);
-      dropzone.classList.remove('has-preview');
-      const url = URL.createObjectURL(file);
-      previewVideo.dataset.previewUrl = url;
-      previewVideo.src = url;
-      previewVideo.onloadeddata = () => {
-        dropzone.classList.add('has-preview');
-      };
-      previewVideo.onerror = () => {
-        dropzone.classList.remove('has-preview');
-      };
+      handleSelectedFile(fileInput.files[0]);
+    });
+  }
+
+  if (dropzone && fileInput) {
+    const setDragState = (isActive) => {
+      dropzone.classList.toggle('is-dragover', isActive);
+    };
+
+    ['dragenter', 'dragover'].forEach((eventName) => {
+      dropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setDragState(true);
+      });
+    });
+
+    ['dragleave', 'dragend', 'drop'].forEach((eventName) => {
+      dropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setDragState(false);
+      });
+    });
+
+    dropzone.addEventListener('drop', (event) => {
+      const file = event.dataTransfer?.files?.[0];
+      if (!file) return;
+      const transfer = new DataTransfer();
+      transfer.items.add(file);
+      fileInput.files = transfer.files;
+      handleSelectedFile(file);
     });
   }
 
