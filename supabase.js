@@ -1953,7 +1953,6 @@ const createCollection = async () => {
 
 const setupSettings = async () => {
   if (!supabaseClient || page !== 'settings') return;
-  document.body.classList.add('settings-blurred');
   const session = await fetchSession();
   if (!session) return;
 
@@ -2069,7 +2068,6 @@ const setupSettings = async () => {
         originalSettings[key] = pendingSettings[key];
       });
       setSaveState(false);
-      document.body.classList.remove('settings-blurred');
       showToast('Settings saved');
     }
 
