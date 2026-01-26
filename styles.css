@@ -1048,6 +1048,11 @@ body[data-stagger="on"] .clip-card * {
   visibility: visible;
 }
 
+body[data-stagger="on"] .player video,
+body[data-stagger="on"] .player .clip-share-video {
+  visibility: visible;
+}
+
 
 .navbar.stagger-item.reveal {
   animation: fade-up-navbar 0.8s ease forwards;
