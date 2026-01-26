@@ -60,6 +60,72 @@ const showToast = (message) => {
   setTimeout(() => toast.remove(), 3000);
 };
 
+const promptText = ({ title, placeholder = '', value = '', type = 'text' }) => {
+  return new Promise((resolve) => {
+    let modal = document.querySelector('[data-prompt-modal]');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.className = 'prompt-overlay';
+      modal.setAttribute('data-prompt-modal', 'true');
+      modal.innerHTML = `
+        <div class="prompt-card">
+          <div class="prompt-header">Update</div>
+          <div class="prompt-body">
+            <label class="prompt-label"></label>
+            <input class="input prompt-input" type="text" />
+          </div>
+          <div class="prompt-actions">
+            <button class="button-secondary" data-prompt-cancel>Cancel</button>
+            <button class="button-primary" data-prompt-ok>Save</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    const label = modal.querySelector('.prompt-label');
+    const input = modal.querySelector('.prompt-input');
+    const okBtn = modal.querySelector('[data-prompt-ok]');
+    const cancelBtn = modal.querySelector('[data-prompt-cancel]');
+
+    if (label) label.textContent = title || 'Update';
+    if (input) {
+      input.type = type;
+      input.placeholder = placeholder;
+      input.value = value || '';
+    }
+
+    const close = (result) => {
+      modal.classList.remove('active');
+      document.body.classList.remove('modal-open');
+      okBtn?.removeEventListener('click', onOk);
+      cancelBtn?.removeEventListener('click', onCancel);
+      modal.removeEventListener('click', onBackdrop);
+      document.removeEventListener('keydown', onKey);
+      resolve(result);
+    };
+
+    const onOk = () => close(input ? input.value.trim() : '');
+    const onCancel = () => close(null);
+    const onBackdrop = (event) => {
+      if (event.target === modal) close(null);
+    };
+    const onKey = (event) => {
+      if (event.key === 'Escape') close(null);
+      if (event.key === 'Enter') close(input ? input.value.trim() : '');
+    };
+
+    okBtn?.addEventListener('click', onOk);
+    cancelBtn?.addEventListener('click', onCancel);
+    modal.addEventListener('click', onBackdrop);
+    document.addEventListener('keydown', onKey);
+
+    modal.classList.add('active');
+    document.body.classList.add('modal-open');
+    setTimeout(() => input?.focus(), 0);
+  });
+};
+
 const setAuthState = (session) => {
   document.body.setAttribute('data-auth', session ? 'logged-in' : 'logged-out');
   setDebugStatus('auth', Boolean(session), session ? 'logged-in' : 'logged-out');
@@ -1265,7 +1331,10 @@ const setupClipActions = () => {
 
     if (card && event.target.closest('[data-action="edit"]')) {
       const clipId = card.getAttribute('data-clip-id');
-      const newTitle = prompt('New title');
+      const newTitle = await promptText({
+        title: 'New title',
+        placeholder: 'Clip title'
+      });
       if (!newTitle) return;
       await supabaseClient.from('clips').update({ title: newTitle }).eq('id', clipId);
       const titleEl = card.querySelector('.clip-meta h3');
@@ -1793,7 +1862,10 @@ const setupModalActions = () => {
       if (!supabaseClient) return;
       const session = await fetchSession();
       if (!session) return alert('Please log in to report clips.');
-      const reason = prompt('Reason for report?');
+      const reason = await promptText({
+        title: 'Reason for report',
+        placeholder: 'Tell us what happened'
+      });
       if (!reason) return;
       await supabaseClient.from('reports').insert({ reporter_id: session.user.id, clip_id: activeClipId, reason });
       showToast('Report submitted');
@@ -1869,7 +1941,10 @@ const createCollection = async () => {
   if (!supabaseClient) return;
   const session = await fetchSession();
   if (!session) return alert('Please log in.');
-  const title = prompt('Collection title');
+  const title = await promptText({
+    title: 'Collection title',
+    placeholder: 'My new collection'
+  });
   if (!title) return;
   await supabaseClient.from('collections').insert({ user_id: session.user.id, title, visibility: 'private' });
   showToast('Collection created');
@@ -1936,28 +2011,42 @@ const setupSettings = async () => {
     const action = btn.dataset.action;
 
     if (action === 'display-name') {
-      const value = prompt('New display name');
+      const value = await promptText({
+        title: 'New display name',
+        placeholder: 'Display name'
+      });
       if (!value) return;
       await supabaseClient.from('profiles').update({ display_name: value }).eq('id', session.user.id);
       showToast('Display name updated');
     }
 
     if (action === 'username') {
-      const value = prompt('New username');
+      const value = await promptText({
+        title: 'New username',
+        placeholder: 'username'
+      });
       if (!value) return;
       await supabaseClient.from('profiles').update({ username: value.replace('@', '') }).eq('id', session.user.id);
       showToast('Username updated');
     }
 
     if (action === 'email') {
-      const value = prompt('New email');
+      const value = await promptText({
+        title: 'New email',
+        placeholder: 'name@email.com',
+        type: 'email'
+      });
       if (!value) return;
       await supabaseClient.auth.updateUser({ email: value });
       showToast('Email update requested. Check your inbox.');
     }
 
     if (action === 'reset-password') {
-      const value = prompt('Email for password reset');
+      const value = await promptText({
+        title: 'Email for password reset',
+        placeholder: 'name@email.com',
+        type: 'email'
+      });
       if (!value) return;
       await supabaseClient.auth.resetPasswordForEmail(value, { redirectTo: AUTH_REDIRECT });
       showToast('Password reset email sent');

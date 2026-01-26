@@ -1152,6 +1152,57 @@ body[data-stagger="on"] .player .clip-share-video {
   }
 }
 
+.prompt-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1500;
+}
+
+.prompt-overlay.active {
+  display: flex;
+}
+
+.prompt-card {
+  width: min(420px, 92vw);
+  background: linear-gradient(180deg, rgba(24, 28, 54, 0.95), rgba(16, 18, 32, 0.98));
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+.prompt-header {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--text-white);
+}
+
+.prompt-body {
+  display: grid;
+  gap: 8px;
+}
+
+.prompt-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.prompt-input {
+  width: 100%;
+}
+
+.prompt-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 @keyframes toast-in {
   to {
     opacity: 1;
