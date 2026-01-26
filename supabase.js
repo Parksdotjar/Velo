@@ -98,6 +98,7 @@ const promptText = ({ title, placeholder = '', value = '', type = 'text' }) => {
     const close = (result) => {
       modal.classList.remove('active');
       document.body.classList.remove('modal-open');
+      document.body.classList.remove('prompt-open');
       okBtn?.removeEventListener('click', onOk);
       cancelBtn?.removeEventListener('click', onCancel);
       modal.removeEventListener('click', onBackdrop);
@@ -122,6 +123,7 @@ const promptText = ({ title, placeholder = '', value = '', type = 'text' }) => {
 
     modal.classList.add('active');
     document.body.classList.add('modal-open');
+    document.body.classList.add('prompt-open');
     setTimeout(() => input?.focus(), 0);
   });
 };
