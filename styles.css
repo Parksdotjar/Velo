@@ -441,12 +441,6 @@ body.page-enter .page {
   gap: 12px;
 }
 
-.dropzone.is-loading .dropzone-content {
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.25s ease;
-}
-
 .upload-preview {
   width: 100%;
   height: 100%;
@@ -470,47 +464,6 @@ body.page-enter .page {
   display: block;
 }
 
-.preview-loader {
-  position: absolute;
-  inset: 0;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.6);
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition: opacity 0.35s ease, visibility 0s linear 0.35s;
-  perspective: 800px;
-}
-
-.preview-loader.stagger-item,
-.preview-loader.stagger-item.reveal {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-.dropzone.is-loading .preview-loader,
-.dropzone.is-loading .preview-loader.stagger-item,
-.dropzone.is-loading .preview-loader.stagger-item.reveal,
-.dropzone.loading-out .preview-loader,
-.dropzone.loading-out .preview-loader.stagger-item,
-.dropzone.loading-out .preview-loader.stagger-item.reveal {
-  display: flex;
-  visibility: visible;
-  pointer-events: auto;
-}
-
-.dropzone.is-loading .preview-loader {
-  opacity: 1;
-  transition: opacity 0.35s ease;
-}
-
-.dropzone.loading-out .preview-loader {
-  opacity: 0;
-  transition: opacity 0.35s ease;
-}
 
 .upload-publish-overlay {
   position: fixed;
