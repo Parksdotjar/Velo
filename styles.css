@@ -763,12 +763,18 @@ body.page-enter .page {
   overflow: hidden;
 }
 
-.player video {
+.player .clip-share-video {
   width: 100%;
   height: 100%;
   display: block;
   object-fit: cover;
   background: #000000;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.player.is-ready .clip-share-video {
+  opacity: 1;
 }
 
 .meta-stack {

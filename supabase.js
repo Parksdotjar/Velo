@@ -282,6 +282,33 @@ const getClipPageUrl = (clip) => {
     : `${getBaseUrl()}clip.html?id=${clip.id}`;
 };
 
+const setPlayerPoster = (player, posterUrl) => {
+  if (!player) return;
+  if (posterUrl) {
+    player.style.backgroundImage = `url('${posterUrl}')`;
+    player.style.backgroundSize = 'cover';
+    player.style.backgroundPosition = 'center';
+  } else {
+    player.style.backgroundImage = '';
+  }
+};
+
+const capturePosterFrame = (video, player) => {
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 360;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+    setPlayerPoster(player, dataUrl);
+    if (!video.poster) video.poster = dataUrl;
+  } catch (err) {
+    console.warn('Poster capture failed', err);
+  }
+};
+
 const startHoverPreview = (card) => {
   if (!card || card.dataset.previewing === 'true') return;
   if (document.body.classList.contains('modal-open')) return;
@@ -810,14 +837,10 @@ const loadClipPage = async () => {
   if (player) {
     if (videoUrl) {
       player.innerHTML = '';
-      if (posterUrl) {
-        player.style.backgroundImage = `url('${posterUrl}')`;
-        player.style.backgroundSize = 'cover';
-        player.style.backgroundPosition = 'center';
-      } else {
-        player.style.backgroundImage = '';
-      }
+      player.classList.remove('is-ready');
+      setPlayerPoster(player, posterUrl);
       const video = document.createElement('video');
+      video.className = 'clip-share-video';
       video.src = videoUrl;
       video.controls = true;
       video.playsInline = true;
@@ -827,14 +850,25 @@ const loadClipPage = async () => {
       if (posterUrl) video.poster = posterUrl;
       video.style.width = '100%';
       video.style.height = '100%';
+      video.addEventListener('loadedmetadata', () => {
+        if (!posterUrl) {
+          const seekTime = Math.min(1, Math.max(0, (video.duration || 2) / 4));
+          try {
+            video.currentTime = seekTime;
+          } catch (err) {
+            // ignore seek errors
+          }
+        }
+      });
+      video.addEventListener('seeked', () => {
+        if (!posterUrl) capturePosterFrame(video, player);
+      }, { once: true });
       video.addEventListener('canplay', () => {
-        player.style.backgroundImage = '';
+        player.classList.add('is-ready');
         video.play().catch(() => {});
       }, { once: true });
       video.addEventListener('error', () => {
-        if (posterUrl) {
-          player.style.backgroundImage = `url('${posterUrl}')`;
-        }
+        setPlayerPoster(player, posterUrl);
       }, { once: true });
       player.appendChild(video);
     } else {
