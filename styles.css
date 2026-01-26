@@ -1157,15 +1157,14 @@ body[data-stagger="on"] .player .clip-share-video {
   inset: 0;
   background: rgba(0, 0, 0, 0.65);
   display: none;
-  align-items: center;
-  justify-content: center;
   padding: 24px;
   backdrop-filter: blur(10px);
   z-index: 1500;
 }
 
 .prompt-overlay.active {
-  display: flex;
+  display: grid;
+  place-items: center;
 }
 
 .prompt-card {
@@ -1177,6 +1176,7 @@ body[data-stagger="on"] .player .clip-share-video {
   display: grid;
   gap: 14px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  margin: 0 auto;
 }
 
 body.settings-blurred main,
