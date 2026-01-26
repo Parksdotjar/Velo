@@ -769,13 +769,9 @@ body.page-enter .page {
   display: block;
   object-fit: cover;
   background: #000000;
-  opacity: 0;
-  transition: opacity 0.35s ease;
-}
-
-.player.is-ready .clip-share-video {
   opacity: 1;
 }
+
 
 .meta-stack {
   display: flex;

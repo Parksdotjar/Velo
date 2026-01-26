@@ -837,39 +837,15 @@ const loadClipPage = async () => {
   if (player) {
     if (videoUrl) {
       player.innerHTML = '';
-      player.classList.remove('is-ready');
-      setPlayerPoster(player, posterUrl);
       const video = document.createElement('video');
       video.className = 'clip-share-video';
       video.src = videoUrl;
       video.controls = true;
       video.playsInline = true;
-      video.muted = true;
-      video.autoplay = true;
-      video.loop = true;
+      video.preload = 'metadata';
       if (posterUrl) video.poster = posterUrl;
       video.style.width = '100%';
       video.style.height = '100%';
-      video.addEventListener('loadedmetadata', () => {
-        if (!posterUrl) {
-          const seekTime = Math.min(1, Math.max(0, (video.duration || 2) / 4));
-          try {
-            video.currentTime = seekTime;
-          } catch (err) {
-            // ignore seek errors
-          }
-        }
-      });
-      video.addEventListener('seeked', () => {
-        if (!posterUrl) capturePosterFrame(video, player);
-      }, { once: true });
-      video.addEventListener('canplay', () => {
-        player.classList.add('is-ready');
-        video.play().catch(() => {});
-      }, { once: true });
-      video.addEventListener('error', () => {
-        setPlayerPoster(player, posterUrl);
-      }, { once: true });
       player.appendChild(video);
     } else {
       player.textContent = 'Video unavailable.';
