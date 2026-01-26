@@ -260,6 +260,65 @@ const hidePublishOverlay = () => {
   overlay.classList.remove('active', 'show-text', 'hide');
 };
 
+const buildClipVideoUrl = (videoPath) => {
+  if (!videoPath) return '';
+  return `${SUPABASE_URL}/storage/v1/object/public/clips/${videoPath}`;
+};
+
+const startHoverPreview = (card) => {
+  if (!card || card.dataset.previewing === 'true') return;
+  if (document.body.classList.contains('modal-open')) return;
+  const thumb = card.querySelector('.clip-thumb');
+  if (!thumb) return;
+  const videoPath = card.getAttribute('data-video-path');
+  if (!videoPath) return;
+
+  const video = document.createElement('video');
+  video.className = 'clip-preview-video';
+  video.muted = true;
+  video.playsInline = true;
+  video.loop = true;
+  video.src = buildClipVideoUrl(videoPath);
+
+  card.dataset.previewing = 'true';
+  thumb.classList.add('is-hovering');
+  thumb.appendChild(video);
+  video.addEventListener('loadeddata', () => {
+    video.play().catch(() => {});
+  }, { once: true });
+};
+
+const stopHoverPreview = (card) => {
+  if (!card) return;
+  const thumb = card.querySelector('.clip-thumb');
+  const video = thumb?.querySelector('.clip-preview-video');
+  if (video) {
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+    video.remove();
+  }
+  if (thumb) thumb.classList.remove('is-hovering');
+  card.dataset.previewing = 'false';
+};
+
+const bindHoverPreviews = (grid) => {
+  if (!grid) return;
+  grid.querySelectorAll('.clip-card').forEach((card) => {
+    if (card.dataset.hoverBound === 'true') return;
+    card.dataset.hoverBound = 'true';
+    card.addEventListener('mouseenter', () => startHoverPreview(card));
+    card.addEventListener('mouseleave', () => stopHoverPreview(card));
+  });
+};
+
+const openClipViewer = () => {
+  const modal = document.querySelector('[data-modal]');
+  if (!modal) return;
+  modal.classList.add('active');
+  document.body.classList.add('modal-open');
+};
+
 const buildClipCard = (clip) => {
   const tags = (clip.clip_tags || []).map((ct) => ct.tags?.name).filter(Boolean);
   const creator = clip.profiles?.username || 'unknown';
@@ -272,7 +331,7 @@ const buildClipCard = (clip) => {
   const likeIcon = 'sprite.svg#icon-heart';
 
   return `
-    <article class="clip-card" data-open-modal data-clip-id="${clip.id}" data-user-id="${creatorId}">
+    <article class="clip-card" data-open-modal data-clip-id="${clip.id}" data-user-id="${creatorId}" data-video-path="${clip.video_path || ''}">
       <div class="clip-thumb" style="${thumbUrl ? `background-image: url('${thumbUrl}'); background-size: cover; background-position: center;` : ''}">
         <div class="thumb-overlay">${clip.duration || '00:00'}</div>
       </div>
@@ -429,6 +488,7 @@ const loadExplore = async () => {
 
   grid.innerHTML = filtered.map(buildClipCard).join('');
   await hydrateUserReactions(filtered.map((clip) => clip.id));
+  bindHoverPreviews(grid);
   if (window.veloStagger) {
     window.veloStagger.prepareStagger();
     window.veloStagger.runReveal();
@@ -762,6 +822,10 @@ const setupClipActions = () => {
     const shareBtn = event.target.closest('[data-action="share"]');
     const downloadBtn = event.target.closest('[data-action="download"]');
     const card = event.target.closest('[data-clip-id]');
+    const openBlocked =
+      Boolean(event.target.closest('[data-action]')) ||
+      Boolean(event.target.closest('[data-no-modal]')) ||
+      Boolean(event.target.closest('a[href]'));
 
     if (likeBtn && card) {
       event.preventDefault();
@@ -846,6 +910,11 @@ const setupClipActions = () => {
       if (clipId) {
         await supabaseClient.from('views').insert({ clip_id: clipId });
       }
+    }
+
+    if (card && !openBlocked && page === 'explore') {
+      stopHoverPreview(card);
+      openClipViewer();
     }
 
     if (card && event.target.closest('[data-action="delete"]')) {
