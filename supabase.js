@@ -809,7 +809,34 @@ const loadClipPage = async () => {
   }
   if (player) {
     if (videoUrl) {
-      player.innerHTML = `<video src="${videoUrl}" controls playsinline poster="${posterUrl}" style="width:100%; height:100%;"></video>`;
+      player.innerHTML = '';
+      if (posterUrl) {
+        player.style.backgroundImage = `url('${posterUrl}')`;
+        player.style.backgroundSize = 'cover';
+        player.style.backgroundPosition = 'center';
+      } else {
+        player.style.backgroundImage = '';
+      }
+      const video = document.createElement('video');
+      video.src = videoUrl;
+      video.controls = true;
+      video.playsInline = true;
+      video.muted = true;
+      video.autoplay = true;
+      video.loop = true;
+      if (posterUrl) video.poster = posterUrl;
+      video.style.width = '100%';
+      video.style.height = '100%';
+      video.addEventListener('canplay', () => {
+        player.style.backgroundImage = '';
+        video.play().catch(() => {});
+      }, { once: true });
+      video.addEventListener('error', () => {
+        if (posterUrl) {
+          player.style.backgroundImage = `url('${posterUrl}')`;
+        }
+      }, { once: true });
+      player.appendChild(video);
     } else {
       player.textContent = 'Video unavailable.';
     }
