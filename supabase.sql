@@ -148,6 +148,11 @@ create table if not exists follows (
 
 do $$
 begin
+  begin
+    delete from follows where follower_id = following_id;
+  exception when undefined_table then
+    null;
+  end;
   if not exists (select 1 from pg_constraint where conname = 'follows_no_self') then
     alter table follows add constraint follows_no_self check (follower_id <> following_id);
   end if;
@@ -172,12 +177,16 @@ create table if not exists comments (
 
 do $$
 begin
-  if not exists (
-    select 1 from pg_publication_tables
-    where pubname = 'supabase_realtime' and tablename = 'comments'
-  ) then
-    alter publication supabase_realtime add table comments;
-  end if;
+  begin
+    if not exists (
+      select 1 from pg_publication_tables
+      where pubname = 'supabase_realtime' and tablename = 'comments'
+    ) then
+      execute 'alter publication supabase_realtime add table comments';
+    end if;
+  exception when insufficient_privilege then
+    raise notice 'Skipping realtime publication for comments (insufficient privilege).';
+  end;
 end;
 $$;
 
@@ -207,6 +216,45 @@ create table if not exists collection_clips (
   added_at timestamptz default now(),
   primary key (collection_id, clip_id)
 );
+
+-- Storage policies (buckets: clips, thumbs, avatars)
+do $$
+begin
+  begin
+    execute 'alter table storage.objects enable row level security';
+
+    if not exists (
+      select 1 from pg_policies
+      where schemaname = 'storage' and tablename = 'objects' and policyname = 'Public read for clips'
+    ) then
+      execute 'create policy "Public read for clips" on storage.objects for select using (bucket_id in (''clips'',''thumbs'',''avatars''))';
+    end if;
+
+    if not exists (
+      select 1 from pg_policies
+      where schemaname = 'storage' and tablename = 'objects' and policyname = 'Users can upload clips'
+    ) then
+      execute 'create policy "Users can upload clips" on storage.objects for insert with check (bucket_id = ''clips'' and auth.uid() is not null)';
+    end if;
+
+    if not exists (
+      select 1 from pg_policies
+      where schemaname = 'storage' and tablename = 'objects' and policyname = 'Users can upload thumbs'
+    ) then
+      execute 'create policy "Users can upload thumbs" on storage.objects for insert with check (bucket_id = ''thumbs'' and auth.uid() is not null)';
+    end if;
+
+    if not exists (
+      select 1 from pg_policies
+      where schemaname = 'storage' and tablename = 'objects' and policyname = 'Users can upload avatars'
+    ) then
+      execute 'create policy "Users can upload avatars" on storage.objects for insert with check (bucket_id = ''avatars'' and auth.uid() is not null)';
+    end if;
+  exception when insufficient_privilege then
+    raise notice 'Skipping storage.objects policies (insufficient privilege).';
+  end;
+end;
+$$;
 
 -- Counters via triggers
 create or replace function handle_like_insert()
@@ -249,22 +297,27 @@ begin
 end;
 $$ language plpgsql;
 
+drop trigger if exists likes_insert_trigger on likes;
 create trigger likes_insert_trigger
 after insert on likes
 for each row execute procedure handle_like_insert();
 
+drop trigger if exists likes_delete_trigger on likes;
 create trigger likes_delete_trigger
 after delete on likes
 for each row execute procedure handle_like_delete();
 
+drop trigger if exists saves_insert_trigger on saves;
 create trigger saves_insert_trigger
 after insert on saves
 for each row execute procedure handle_save_insert();
 
+drop trigger if exists saves_delete_trigger on saves;
 create trigger saves_delete_trigger
 after delete on saves
 for each row execute procedure handle_save_delete();
 
+drop trigger if exists views_insert_trigger on views;
 create trigger views_insert_trigger
 after insert on views
 for each row execute procedure handle_view_insert();
@@ -336,46 +389,72 @@ alter table collections enable row level security;
 alter table collection_clips enable row level security;
 
 -- Profiles policies
+drop policy if exists "Public profiles are viewable" on profiles;
+
 create policy "Public profiles are viewable" on profiles
   for select using (true);
 
+drop policy if exists "Users can insert their profile" on profiles;
+
 create policy "Users can insert their profile" on profiles
   for insert with check (auth.uid() = id);
+
+drop policy if exists "Users can update own profile" on profiles;
 
 create policy "Users can update own profile" on profiles
   for update using (auth.uid() = id);
 
 -- Clips policies
+drop policy if exists "Public clips are viewable" on clips;
+
 create policy "Public clips are viewable" on clips
   for select using (visibility = 'public');
+
+drop policy if exists "Users can view own clips" on clips;
 
 create policy "Users can view own clips" on clips
   for select using (auth.uid() = user_id);
 
+drop policy if exists "Users can insert own clips" on clips;
+
 create policy "Users can insert own clips" on clips
   for insert with check (auth.uid() = user_id);
 
+drop policy if exists "Users can update own clips" on clips;
+
 create policy "Users can update own clips" on clips
   for update using (auth.uid() = user_id);
+
+drop policy if exists "Users can delete own clips" on clips;
 
 create policy "Users can delete own clips" on clips
   for delete using (auth.uid() = user_id);
 
 -- Tags policies
+drop policy if exists "Tags are viewable" on tags;
+
 create policy "Tags are viewable" on tags
   for select using (true);
+
+drop policy if exists "Users can insert tags" on tags;
 
 create policy "Users can insert tags" on tags
   for insert with check (auth.uid() is not null);
 
 -- Clip tags policies
+drop policy if exists "Clip tags are viewable" on clip_tags;
+
 create policy "Clip tags are viewable" on clip_tags
   for select using (true);
+
+drop policy if exists "Users can manage own clip tags" on clip_tags;
 
 create policy "Users can manage own clip tags" on clip_tags
   for insert with check (
     auth.uid() = (select user_id from clips where clips.id = clip_id)
   );
+
+drop policy if exists "Users can delete own clip tags" on clip_tags;
 
 create policy "Users can delete own clip tags" on clip_tags
   for delete using (
@@ -383,70 +462,110 @@ create policy "Users can delete own clip tags" on clip_tags
   );
 
 -- Likes policies
+drop policy if exists "Likes are viewable" on likes;
+
 create policy "Likes are viewable" on likes
   for select using (true);
 
+drop policy if exists "Users can like" on likes;
+
 create policy "Users can like" on likes
   for insert with check (auth.uid() = user_id);
+
+drop policy if exists "Users can remove like" on likes;
 
 create policy "Users can remove like" on likes
   for delete using (auth.uid() = user_id);
 
 -- Saves policies
+drop policy if exists "Saves are viewable" on saves;
+
 create policy "Saves are viewable" on saves
   for select using (auth.uid() = user_id);
 
+drop policy if exists "Users can save" on saves;
+
 create policy "Users can save" on saves
   for insert with check (auth.uid() = user_id);
+
+drop policy if exists "Users can remove save" on saves;
 
 create policy "Users can remove save" on saves
   for delete using (auth.uid() = user_id);
 
 -- Follows policies
+drop policy if exists "Follows are viewable" on follows;
+
 create policy "Follows are viewable" on follows
   for select using (true);
 
+drop policy if exists "Users can follow" on follows;
+
 create policy "Users can follow" on follows
   for insert with check (auth.uid() = follower_id);
+
+drop policy if exists "Users can unfollow" on follows;
 
 create policy "Users can unfollow" on follows
   for delete using (auth.uid() = follower_id);
 
 -- Views policies
+drop policy if exists "Views are insertable" on views;
+
 create policy "Views are insertable" on views
   for insert with check (true);
 
 -- Comments policies
+drop policy if exists "Comments are viewable" on comments;
+
 create policy "Comments are viewable" on comments
   for select using (true);
 
+drop policy if exists "Users can comment" on comments;
+
 create policy "Users can comment" on comments
   for insert with check (auth.uid() = user_id);
+
+drop policy if exists "Users can delete own comments" on comments;
 
 create policy "Users can delete own comments" on comments
   for delete using (auth.uid() = user_id);
 
 -- Reports policies
+drop policy if exists "Reports are insertable" on reports;
+
 create policy "Reports are insertable" on reports
   for insert with check (auth.uid() = reporter_id);
+
+drop policy if exists "Reports are viewable by authenticated users" on reports;
 
 create policy "Reports are viewable by authenticated users" on reports
   for select using (auth.uid() is not null);
 
 -- Collections policies
+drop policy if exists "Collections are viewable if public or owner" on collections;
+
 create policy "Collections are viewable if public or owner" on collections
   for select using (visibility = 'public' or auth.uid() = user_id);
+
+drop policy if exists "Users can insert own collections" on collections;
 
 create policy "Users can insert own collections" on collections
   for insert with check (auth.uid() = user_id);
 
+drop policy if exists "Users can update own collections" on collections;
+
 create policy "Users can update own collections" on collections
   for update using (auth.uid() = user_id);
+
+drop policy if exists "Users can delete own collections" on collections;
 
 create policy "Users can delete own collections" on collections
   for delete using (auth.uid() = user_id);
 
 -- Collection clips policies
+drop policy if exists "Collection clips viewable if collection public or owner" on collection_clips;
+
 create policy "Collection clips viewable if collection public or owner" on collection_clips
   for select using (
     exists (
@@ -456,10 +575,14 @@ create policy "Collection clips viewable if collection public or owner" on colle
     )
   );
 
+drop policy if exists "Users can manage own collection clips" on collection_clips;
+
 create policy "Users can manage own collection clips" on collection_clips
   for insert with check (
     exists (select 1 from collections where collections.id = collection_id and collections.user_id = auth.uid())
   );
+
+drop policy if exists "Users can delete own collection clips" on collection_clips;
 
 create policy "Users can delete own collection clips" on collection_clips
   for delete using (
