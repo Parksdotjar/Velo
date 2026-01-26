@@ -837,6 +837,7 @@ const loadClipPage = async () => {
   if (player) {
     if (videoUrl) {
       player.innerHTML = '';
+      setPlayerPoster(player, posterUrl);
       const video = document.createElement('video');
       video.className = 'clip-share-video';
       video.src = videoUrl;
@@ -846,6 +847,12 @@ const loadClipPage = async () => {
       if (posterUrl) video.poster = posterUrl;
       video.style.width = '100%';
       video.style.height = '100%';
+      if (!posterUrl) {
+        video.addEventListener('loadeddata', () => {
+          capturePosterFrame(video, player);
+          if (video.poster) setPlayerPoster(player, video.poster);
+        }, { once: true });
+      }
       player.appendChild(video);
     } else {
       player.textContent = 'Video unavailable.';
