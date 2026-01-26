@@ -265,6 +265,11 @@ const buildClipVideoUrl = (videoPath) => {
   return `${SUPABASE_URL}/storage/v1/object/public/clips/${videoPath}`;
 };
 
+const getShareRedirectUrl = (clip) => {
+  if (!clip?.video_path) return '';
+  return `${getBaseUrl()}v/clips/${clip.video_path}`;
+};
+
 const buildClipThumbUrl = (thumbPath) => {
   if (!thumbPath) return '';
   return `${SUPABASE_URL}/storage/v1/object/public/thumbs/${thumbPath}`;
@@ -780,6 +785,7 @@ const loadClipPage = async () => {
   const videoUrl = buildClipVideoUrl(clip.video_path);
   const posterUrl = buildClipThumbUrl(clip.thumb_path);
   const pageUrl = getClipPageUrl(clip);
+  const redirectUrl = getShareRedirectUrl(clip);
   if (titleEl) titleEl.textContent = clip.title || 'Untitled Clip';
   if (creatorEl) {
     if (clip.user_id) {
@@ -796,22 +802,22 @@ const loadClipPage = async () => {
   if (embedEl) {
     if (!clip.allow_embed) {
       embedEl.textContent = 'Embedding disabled by creator.';
-    } else if (videoUrl) {
-      embedEl.textContent = `<video src="${videoUrl}" controls playsinline poster="${posterUrl}" style="width:100%; max-width:640px; border-radius:12px;"></video>`;
+    } else if (redirectUrl) {
+      embedEl.textContent = `<video src="${redirectUrl}" controls playsinline poster="${posterUrl}" style="width:100%; max-width:640px; border-radius:12px;"></video>`;
     } else {
       embedEl.textContent = 'Embed unavailable.';
     }
   }
   if (copyBtn) {
     copyBtn.onclick = async () => {
-      const shareUrl = clip.allow_embed && videoUrl ? videoUrl : pageUrl;
+      const shareUrl = clip.allow_embed && redirectUrl ? redirectUrl : pageUrl;
       await navigator.clipboard.writeText(shareUrl);
-      showToast(clip.allow_embed ? 'Discord-ready link copied' : 'Link copied');
+      showToast(clip.allow_embed ? 'VELO link copied' : 'Link copied');
     };
   }
   if (player) {
-    if (videoUrl) {
-      player.innerHTML = `<video src="${videoUrl}" controls playsinline poster="${posterUrl}" style="width:100%; height:100%;"></video>`;
+    if (redirectUrl) {
+      player.innerHTML = `<video src="${redirectUrl}" controls playsinline poster="${posterUrl}" style="width:100%; height:100%;"></video>`;
     } else {
       player.textContent = 'Video unavailable.';
     }
@@ -958,10 +964,10 @@ const setupClipActions = () => {
       const clip = clipCache.get(clipId);
       if (clip) {
         const pageUrl = getClipPageUrl(clip);
-        const directUrl = clip.allow_embed ? buildClipVideoUrl(clip.video_path) : '';
-        const shareUrl = directUrl || pageUrl;
+        const redirectUrl = clip.allow_embed ? getShareRedirectUrl(clip) : '';
+        const shareUrl = redirectUrl || pageUrl;
         await navigator.clipboard.writeText(shareUrl);
-        showToast(directUrl ? 'Discord-ready link copied' : 'Link copied');
+        showToast(redirectUrl ? 'VELO link copied' : 'Link copied');
       }
     }
 
@@ -1480,10 +1486,10 @@ const setupModalActions = () => {
       const clip = clipCache.get(activeClipId);
       if (!clip) return;
       const pageUrl = getClipPageUrl(clip);
-      const directUrl = clip.allow_embed ? buildClipVideoUrl(clip.video_path) : '';
-      const shareUrl = directUrl || pageUrl;
+      const redirectUrl = clip.allow_embed ? getShareRedirectUrl(clip) : '';
+      const shareUrl = redirectUrl || pageUrl;
       await navigator.clipboard.writeText(shareUrl);
-      showToast(directUrl ? 'Discord-ready link copied' : 'Link copied');
+      showToast(redirectUrl ? 'VELO link copied' : 'Link copied');
     }
 
     if (downloadBtn && activeClipId) {
