@@ -810,9 +810,9 @@ const loadClipPage = async () => {
   }
   if (copyBtn) {
     copyBtn.onclick = async () => {
-      const shareUrl = clip.allow_embed && redirectUrl ? redirectUrl : pageUrl;
+      const shareUrl = redirectUrl || pageUrl;
       await navigator.clipboard.writeText(shareUrl);
-      showToast(clip.allow_embed ? 'VELO link copied' : 'Link copied');
+      showToast(redirectUrl ? 'VELO link copied' : 'Link copied');
     };
   }
   if (player) {
@@ -963,8 +963,8 @@ const setupClipActions = () => {
       const clipId = card.getAttribute('data-clip-id');
       const clip = clipCache.get(clipId);
       if (clip) {
+        const redirectUrl = getShareRedirectUrl(clip);
         const pageUrl = getClipPageUrl(clip);
-        const redirectUrl = clip.allow_embed ? getShareRedirectUrl(clip) : '';
         const shareUrl = redirectUrl || pageUrl;
         await navigator.clipboard.writeText(shareUrl);
         showToast(redirectUrl ? 'VELO link copied' : 'Link copied');
@@ -1485,8 +1485,8 @@ const setupModalActions = () => {
     if (copyBtn && activeClipId) {
       const clip = clipCache.get(activeClipId);
       if (!clip) return;
+      const redirectUrl = getShareRedirectUrl(clip);
       const pageUrl = getClipPageUrl(clip);
-      const redirectUrl = clip.allow_embed ? getShareRedirectUrl(clip) : '';
       const shareUrl = redirectUrl || pageUrl;
       await navigator.clipboard.writeText(shareUrl);
       showToast(redirectUrl ? 'VELO link copied' : 'Link copied');
