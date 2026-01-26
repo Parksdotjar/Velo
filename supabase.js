@@ -837,22 +837,20 @@ const loadClipPage = async () => {
   if (player) {
     if (videoUrl) {
       player.innerHTML = '';
-      setPlayerPoster(player, posterUrl);
+      player.style.backgroundImage = '';
       const video = document.createElement('video');
       video.className = 'clip-share-video';
       video.src = videoUrl;
       video.controls = true;
       video.playsInline = true;
-      video.preload = 'metadata';
-      if (posterUrl) video.poster = posterUrl;
+      video.muted = true;
+      video.autoplay = true;
+      video.preload = 'auto';
       video.style.width = '100%';
       video.style.height = '100%';
-      if (!posterUrl) {
-        video.addEventListener('loadeddata', () => {
-          capturePosterFrame(video, player);
-          if (video.poster) setPlayerPoster(player, video.poster);
-        }, { once: true });
-      }
+      video.addEventListener('canplay', () => {
+        video.play().catch(() => {});
+      }, { once: true });
       player.appendChild(video);
     } else {
       player.textContent = 'Video unavailable.';
