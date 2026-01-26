@@ -18,6 +18,11 @@ export default {
     const responseHeaders = new Headers(upstream.headers);
     responseHeaders.set('Access-Control-Allow-Origin', '*');
     responseHeaders.set('Content-Disposition', 'inline');
+    responseHeaders.set('Accept-Ranges', 'bytes');
+
+    if (path.toLowerCase().endsWith('.mp4')) {
+      responseHeaders.set('Content-Type', 'video/mp4');
+    }
 
     return new Response(upstream.body, {
       status: upstream.status,
