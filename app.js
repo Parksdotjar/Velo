@@ -84,7 +84,14 @@ const closeModal = () => {
   modal.classList.remove('active');
   document.body.classList.remove('modal-open');
   const player = document.querySelector('[data-modal-player]');
-  if (player) player.innerHTML = 'Fullscreen Clip Player';
+  if (player) {
+    const warningOverlay = player.querySelector('[data-modal-warning]');
+    player.innerHTML = '';
+    player.textContent = 'Fullscreen Clip Player';
+    if (warningOverlay) player.appendChild(warningOverlay);
+    player.classList.remove('is-warning');
+  }
+  document.dispatchEvent(new CustomEvent('velo:modal-closed'));
 };
 
 const buildGroups = () => {

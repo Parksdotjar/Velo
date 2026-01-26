@@ -313,7 +313,8 @@ const startHoverPreview = (card) => {
   if (!card || card.dataset.previewing === 'true') return;
   if (document.body.classList.contains('modal-open')) return;
   const thumb = card.querySelector('.clip-thumb');
-  if (!thumb) return;
+  const media = card.querySelector('.clip-thumb-media') || thumb;
+  if (!media) return;
   const videoPath = card.getAttribute('data-video-path');
   if (!videoPath) return;
 
@@ -325,8 +326,8 @@ const startHoverPreview = (card) => {
   video.src = buildClipVideoUrl(videoPath);
 
   card.dataset.previewing = 'true';
-  thumb.classList.add('is-hovering');
-  thumb.appendChild(video);
+  if (thumb) thumb.classList.add('is-hovering');
+  media.appendChild(video);
   video.addEventListener('loadeddata', () => {
     video.play().catch(() => {});
   }, { once: true });
@@ -335,7 +336,8 @@ const startHoverPreview = (card) => {
 const stopHoverPreview = (card) => {
   if (!card) return;
   const thumb = card.querySelector('.clip-thumb');
-  const video = thumb?.querySelector('.clip-preview-video');
+  const media = card.querySelector('.clip-thumb-media') || thumb;
+  const video = media?.querySelector('.clip-preview-video');
   if (video) {
     video.pause();
     video.removeAttribute('src');
@@ -356,6 +358,148 @@ const bindHoverPreviews = (grid) => {
   });
 };
 
+const updateFollowerCount = async (userId) => {
+  if (!supabaseClient || !userId) return 0;
+  const { count } = await supabaseClient
+    .from('follows')
+    .select('follower_id', { count: 'exact', head: true })
+    .eq('following_id', userId);
+  const safeCount = count || 0;
+  document.querySelectorAll(`[data-followers-for="${userId}"]`).forEach((el) => {
+    el.textContent = `${safeCount} follower${safeCount === 1 ? '' : 's'}`;
+  });
+  return safeCount;
+};
+
+const renderCommentItem = (comment) => {
+  const username = comment.profiles?.username || 'user';
+  const time = comment.created_at ? formatTimeAgo(comment.created_at) : '';
+  return `
+    <div class="comment-item" data-comment-id="${comment.id}">
+      <div class="comment-meta">
+        <span>@${username}</span>
+        <span>${time}</span>
+      </div>
+      <div>${comment.body || ''}</div>
+    </div>
+  `;
+};
+
+const renderComments = (comments) => {
+  const list = document.querySelector('[data-comment-list]');
+  if (!list) return;
+  if (!comments || comments.length === 0) {
+    list.innerHTML = '<div class="footer-note">No comments yet.</div>';
+    return;
+  }
+  list.innerHTML = comments.map(renderCommentItem).join('');
+};
+
+const loadComments = async (clipId) => {
+  const list = document.querySelector('[data-comment-list]');
+  if (!supabaseClient || !list || !clipId) return;
+  list.innerHTML = '<div class="footer-note">Loading comments...</div>';
+  const { data, error } = await supabaseClient
+    .from('comments')
+    .select('id,body,created_at,profiles!comments_user_id_fkey(username)')
+    .eq('clip_id', clipId)
+    .order('created_at', { ascending: true });
+  if (error) {
+    list.innerHTML = '<div class="footer-note">Comments unavailable.</div>';
+    return;
+  }
+  renderComments(data || []);
+};
+
+const subscribeComments = async (clipId) => {
+  if (!supabaseClient || !clipId) return;
+  if (commentsChannel) {
+    supabaseClient.removeChannel(commentsChannel);
+    commentsChannel = null;
+  }
+  activeCommentsClipId = clipId;
+  commentsChannel = supabaseClient.channel(`comments-${clipId}`);
+  commentsChannel.on(
+    'postgres_changes',
+    { event: '*', schema: 'public', table: 'comments', filter: `clip_id=eq.${clipId}` },
+    async (payload) => {
+      const list = document.querySelector('[data-comment-list]');
+      if (!list) return;
+      if (payload.eventType === 'INSERT') {
+        const { data } = await supabaseClient
+          .from('comments')
+          .select('id,body,created_at,profiles!comments_user_id_fkey(username)')
+          .eq('id', payload.new.id)
+          .single();
+        if (data) {
+          const empty = list.querySelector('.footer-note');
+          if (empty) empty.remove();
+          list.insertAdjacentHTML('beforeend', renderCommentItem(data));
+        }
+      }
+      if (payload.eventType === 'DELETE') {
+        list.querySelector(`[data-comment-id="${payload.old.id}"]`)?.remove();
+      }
+      if (payload.eventType === 'UPDATE') {
+        const { data } = await supabaseClient
+          .from('comments')
+          .select('id,body,created_at,profiles!comments_user_id_fkey(username)')
+          .eq('id', payload.new.id)
+          .single();
+        const target = list.querySelector(`[data-comment-id="${payload.new.id}"]`);
+        if (data && target) {
+          target.outerHTML = renderCommentItem(data);
+        }
+      }
+    }
+  );
+  commentsChannel.subscribe();
+};
+
+const cleanupComments = () => {
+  if (commentsChannel && supabaseClient) {
+    supabaseClient.removeChannel(commentsChannel);
+    commentsChannel = null;
+  }
+  activeCommentsClipId = null;
+};
+
+const applyModalWarning = (clip) => {
+  const player = document.querySelector('[data-modal-player]');
+  if (!player) return;
+  const hasWarning = Boolean(clip?.content_warning);
+  modalWarningClipId = clip?.id || null;
+  modalWarningAcknowledged = false;
+  if (hasWarning) {
+    player.classList.add('is-warning');
+  } else {
+    player.classList.remove('is-warning');
+  }
+};
+
+const resetModalWarning = () => {
+  modalWarningAcknowledged = false;
+  modalWarningClipId = null;
+  const player = document.querySelector('[data-modal-player]');
+  if (player) player.classList.remove('is-warning');
+};
+
+const initSiteCounter = async () => {
+  if (!supabaseClient) return;
+  if (document.querySelector('.site-counter')) return;
+  const counter = document.createElement('div');
+  counter.className = 'site-counter';
+  counter.innerHTML = `
+    <svg class="icon" aria-hidden="true"><use href="sprite.svg#icon-user"></use></svg>
+    <span data-site-counter>0</span>
+  `;
+  document.body.appendChild(counter);
+  const { count } = await supabaseClient.from('profiles').select('id', { count: 'exact', head: true });
+  const value = count || 0;
+  const label = counter.querySelector('[data-site-counter]');
+  if (label) label.textContent = value;
+};
+
 const openClipViewer = () => {
   const modal = document.querySelector('[data-modal]');
   if (!modal) return;
@@ -373,11 +517,14 @@ const buildClipCard = (clip) => {
     : '';
   const likesCount = clip.likes_count ?? 0;
   const likeIcon = 'sprite.svg#icon-heart';
+  const isWarning = Boolean(clip.content_warning);
 
   return `
-    <article class="clip-card" data-open-modal data-clip-id="${clip.id}" data-user-id="${creatorId}" data-video-path="${clip.video_path || ''}">
-      <div class="clip-thumb" style="${thumbUrl ? `background-image: url('${thumbUrl}'); background-size: cover; background-position: center;` : ''}">
+    <article class="clip-card${isWarning ? ' is-warning' : ''}" data-open-modal data-clip-id="${clip.id}" data-user-id="${creatorId}" data-video-path="${clip.video_path || ''}"${isWarning ? ' data-content-warning="true"' : ''}>
+      <div class="clip-thumb">
+        <div class="clip-thumb-media" style="${thumbUrl ? `background-image: url('${thumbUrl}'); background-size: cover; background-position: center;` : ''}"></div>
         <div class="thumb-overlay">${clip.duration || '00:00'}</div>
+        ${isWarning ? '<div class="thumb-warning">Content warning</div>' : ''}
       </div>
       <div class="clip-meta">
         <h3>${clip.title || 'Untitled Clip'}</h3>
@@ -444,6 +591,10 @@ const buildDashboardCard = (clip) => {
 };
 const clipCache = new Map();
 let currentClipId = null;
+let commentsChannel = null;
+let activeCommentsClipId = null;
+let modalWarningAcknowledged = false;
+let modalWarningClipId = null;
 
 let exploreState = {
   sort: 'new',
@@ -464,7 +615,7 @@ const loadExplore = async () => {
   const grid = document.querySelector('[data-clips-grid]');
   if (!grid) return;
 
-  const baseSelect = 'id,title,created_at,visibility,thumb_path,video_path,duration,duration_seconds,likes_count,views_count,allow_downloads,allow_embed,clip_slug,clip_secret';
+  const baseSelect = 'id,title,created_at,visibility,thumb_path,video_path,duration,duration_seconds,likes_count,views_count,allow_downloads,allow_embed,content_warning,clip_slug,clip_secret';
   const fullSelect = `${baseSelect},profiles!clips_user_id_fkey(id,username),clip_tags(tags(name))`;
 
   let query = supabaseClient
@@ -542,6 +693,8 @@ const loadExplore = async () => {
 const setupExploreFilters = () => {
   const searchInput = document.querySelector('[data-search]');
   const chips = document.querySelectorAll('.chip');
+  const clearBtn = document.querySelector('[data-action="clear-filters"]');
+  const filterPanel = document.querySelector('[data-advanced-filters]');
   let searchTimer;
 
   if (searchInput) {
@@ -581,7 +734,22 @@ const setupExploreFilters = () => {
   const filterBtn = document.querySelector('.filter-button');
   if (filterBtn) {
     filterBtn.addEventListener('click', () => {
-      showToast('Advanced filters coming next.');
+      if (!filterPanel) return showToast('Advanced filters coming next.');
+      const isOpen = filterPanel.style.display !== 'none';
+      filterPanel.style.display = isOpen ? 'none' : 'block';
+    });
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      exploreState = { sort: 'new', duration: null, tag: null, search: '' };
+      if (searchInput) searchInput.value = '';
+      document.querySelectorAll('[data-sort]').forEach((chip) => chip.classList.remove('active'));
+      document.querySelector('[data-sort="new"]')?.classList.add('active');
+      document.querySelectorAll('[data-duration]').forEach((chip) => chip.classList.remove('active'));
+      document.querySelectorAll('[data-tag]').forEach((chip) => chip.classList.remove('active'));
+      if (filterPanel) filterPanel.style.display = 'none';
+      loadExplore();
     });
   }
 };
@@ -604,6 +772,12 @@ const loadDashboard = async () => {
   }
 
   grid.innerHTML = (data || []).map(buildDashboardCard).join('');
+  const view = localStorage.getItem('velo-dashboard-view') || 'grid';
+  grid.classList.toggle('table-view', view === 'table');
+  const gridBtn = document.querySelector('[data-action="dashboard-grid"]');
+  const tableBtn = document.querySelector('[data-action="dashboard-table"]');
+  gridBtn?.classList.toggle('active', view === 'grid');
+  tableBtn?.classList.toggle('active', view === 'table');
 
   const uploads = data?.length || 0;
   const views = (data || []).reduce((sum, clip) => sum + (clip.views_count || 0), 0);
@@ -637,7 +811,7 @@ const loadSaved = async () => {
 
   const { data } = await supabaseClient
     .from('saves')
-    .select('clip_id, clips (id,title,created_at,visibility,thumb_path,video_path,duration,likes_count,views_count,profiles!clips_user_id_fkey(id,username),clip_tags(tags(name)))')
+    .select('clip_id, clips (id,title,created_at,visibility,thumb_path,video_path,duration,content_warning,likes_count,views_count,profiles!clips_user_id_fkey(id,username),clip_tags(tags(name)))')
     .eq('user_id', session.user.id);
 
   const clips = (data || []).map((row) => row.clips).filter(Boolean);
@@ -686,7 +860,7 @@ const loadFollowing = async () => {
 
   const { data } = await supabaseClient
     .from('clips')
-    .select('id,title,created_at,visibility,thumb_path,video_path,duration,likes_count,views_count,profiles!clips_user_id_fkey(id,username),clip_tags(tags(name))')
+    .select('id,title,created_at,visibility,thumb_path,video_path,duration,content_warning,likes_count,views_count,profiles!clips_user_id_fkey(id,username),clip_tags(tags(name))')
     .in('user_id', ids)
     .eq('visibility', 'public')
     .order('created_at', { ascending: false });
@@ -707,7 +881,7 @@ const loadTagPage = async () => {
 
   const { data } = await supabaseClient
     .from('clips')
-    .select('id,title,created_at,visibility,thumb_path,video_path,duration,likes_count,views_count,profiles!clips_user_id_fkey(id,username),clip_tags(tags(name))')
+    .select('id,title,created_at,visibility,thumb_path,video_path,duration,content_warning,likes_count,views_count,profiles!clips_user_id_fkey(id,username),clip_tags(tags(name))')
     .eq('visibility', 'public');
 
   const filtered = (data || []).filter((clip) =>
@@ -725,6 +899,7 @@ const loadProfile = async () => {
   const userEl = document.querySelector('[data-profile-username]');
   const bioEl = document.querySelector('[data-profile-bio]');
   const avatarEl = document.querySelector('[data-profile-avatar]');
+  const followersEl = document.querySelector('[data-profile-followers]');
   const followBtn = document.querySelector('[data-follow-id]');
 
   const params = new URLSearchParams(window.location.search);
@@ -733,8 +908,8 @@ const loadProfile = async () => {
   let resolvedUserId = userId;
   let resolvedUsername = username;
 
+  const session = await fetchSession();
   if (!resolvedUserId && !resolvedUsername) {
-    const session = await fetchSession();
     if (!session) return;
     resolvedUserId = session.user.id;
   }
@@ -770,11 +945,22 @@ const loadProfile = async () => {
     }
   }
   if (followBtn) followBtn.setAttribute('data-follow-id', profile.id);
+  if (followersEl) {
+    followersEl.setAttribute('data-followers-for', profile.id);
+    updateFollowerCount(profile.id);
+  }
+  if (followBtn && session?.user?.id === profile.id) {
+    followBtn.textContent = 'You';
+    followBtn.setAttribute('disabled', 'true');
+    followBtn.setAttribute('aria-pressed', 'true');
+  } else if (followBtn) {
+    followBtn.removeAttribute('disabled');
+  }
 
   if (grid) {
     const { data: clips } = await supabaseClient
       .from('clips')
-      .select('id,title,created_at,visibility,thumb_path,video_path,duration,likes_count,views_count,profiles!clips_user_id_fkey(id,username),clip_tags(tags(name))')
+      .select('id,title,created_at,visibility,thumb_path,video_path,duration,content_warning,likes_count,views_count,profiles!clips_user_id_fkey(id,username),clip_tags(tags(name))')
       .eq('user_id', profile.id)
       .eq('visibility', 'public')
       .order('created_at', { ascending: false });
@@ -1265,6 +1451,16 @@ const setupUpload = () => {
   const statusText = document.querySelector('[data-upload-status]');
   const dropzone = document.querySelector('.dropzone');
   const previewVideo = document.querySelector('[data-upload-preview]');
+  const guidelinesBtn = document.querySelector('[data-action="guidelines"]');
+  const guidelinesPanel = document.querySelector('[data-guidelines]');
+
+  if (guidelinesBtn && guidelinesPanel) {
+    guidelinesBtn.addEventListener('click', () => {
+      const isOpen = guidelinesPanel.style.display !== 'none';
+      guidelinesPanel.style.display = isOpen ? 'none' : 'block';
+    });
+  }
+
   if (!uploadForm || !fileInput || !supabaseClient) return;
 
   fetchSession().then(async (session) => {
@@ -1450,6 +1646,11 @@ const setupFollowButtons = () => {
 
     const session = await fetchSession();
     if (!session) return alert('Please log in to follow creators.');
+    if (session.user.id === targetId) {
+      showToast('You cannot follow yourself.');
+      followBtn.setAttribute('disabled', 'true');
+      return;
+    }
 
     const isFollowing = followBtn.getAttribute('aria-pressed') === 'true';
     if (isFollowing) {
@@ -1468,21 +1669,27 @@ const setupFollowButtons = () => {
       followBtn.textContent = 'Following';
       followBtn.setAttribute('aria-pressed', 'true');
     }
+    updateFollowerCount(targetId);
   });
 };
 
-const hydrateModal = (clipId) => {
+const hydrateModal = async (clipId) => {
   const clip = clipCache.get(clipId);
   if (!clip) return;
   const titleEl = document.querySelector('[data-modal-title]');
   const tagsEl = document.querySelector('[data-modal-tags]');
   const creatorEl = document.querySelector('[data-modal-creator]');
+  const followersEl = document.querySelector('[data-modal-followers]');
   const followBtn = document.querySelector('.modal [data-follow-id]');
   const downloadBtn = document.querySelector('[data-modal-download]');
   const player = document.querySelector('[data-modal-player]');
 
   if (titleEl) titleEl.textContent = clip.title || 'Untitled Clip';
   if (creatorEl) creatorEl.textContent = `@${clip.profiles?.username || 'creator'}`;
+  if (followersEl && clip.profiles?.id) {
+    followersEl.setAttribute('data-followers-for', clip.profiles.id);
+    updateFollowerCount(clip.profiles.id);
+  }
   if (tagsEl) {
     const tags = (clip.clip_tags || []).map((ct) => ct.tags?.name).filter(Boolean);
     tagsEl.innerHTML = tags.map((tag) => `<span class="tag">#${tag}</span>`).join('');
@@ -1492,11 +1699,47 @@ const hydrateModal = (clipId) => {
     followBtn.textContent = 'Follow';
     followBtn.setAttribute('aria-pressed', 'false');
   }
+  const session = await fetchSession();
+  if (followBtn && clip.profiles?.id) {
+    if (session?.user?.id === clip.profiles.id) {
+      followBtn.textContent = 'You';
+      followBtn.setAttribute('aria-pressed', 'true');
+      followBtn.setAttribute('disabled', 'true');
+    } else {
+      followBtn.removeAttribute('disabled');
+    }
+  }
+  const commentInput = document.querySelector('[data-comment-input]');
+  const commentBtn = document.querySelector('[data-action="post-comment"]');
+  if (commentInput && commentBtn) {
+    if (!session) {
+      commentInput.setAttribute('disabled', 'true');
+      commentBtn.setAttribute('disabled', 'true');
+      commentInput.placeholder = 'Log in to comment.';
+    } else {
+      commentInput.removeAttribute('disabled');
+      commentBtn.removeAttribute('disabled');
+      commentInput.placeholder = 'Add a comment...';
+    }
+  }
   if (downloadBtn) downloadBtn.style.display = clip.allow_downloads ? 'inline-flex' : 'none';
   if (player) {
     const url = `${SUPABASE_URL}/storage/v1/object/public/clips/${clip.video_path}`;
-    player.innerHTML = `<video src="${url}" controls playsinline style="width:100%; height:100%; border-radius:16px;"></video>`;
+    const warningOverlay = player.querySelector('[data-modal-warning]');
+    player.innerHTML = '';
+    const video = document.createElement('video');
+    video.src = url;
+    video.controls = true;
+    video.playsInline = true;
+    video.style.width = '100%';
+    video.style.height = '100%';
+    video.style.borderRadius = '16px';
+    player.appendChild(video);
+    if (warningOverlay) player.appendChild(warningOverlay);
   }
+  applyModalWarning(clip);
+  loadComments(clipId);
+  subscribeComments(clipId);
 };
 
 const setupModalActions = () => {
@@ -1506,6 +1749,8 @@ const setupModalActions = () => {
     const reportBtn = event.target.closest('[data-modal-report]');
     const likeBtn = event.target.closest('[data-modal-like]');
     const saveBtn = event.target.closest('[data-modal-save]');
+    const postBtn = event.target.closest('[data-action="post-comment"]');
+    const viewWarningBtn = event.target.closest('[data-action="view-warning"]');
     const openCard = event.target.closest('[data-clip-id]');
 
     if (openCard) {
@@ -1557,6 +1802,29 @@ const setupModalActions = () => {
     if ((likeBtn || saveBtn) && activeClipId) {
       document.querySelector(`[data-clip-id="${activeClipId}"] ${likeBtn ? '[data-action="like"]' : '[data-action="save"]'}`)?.click();
     }
+
+    if (viewWarningBtn) {
+      modalWarningAcknowledged = true;
+      const player = document.querySelector('[data-modal-player]');
+      if (player) player.classList.remove('is-warning');
+    }
+
+    if (postBtn && activeClipId) {
+      if (!supabaseClient) return;
+      const session = await fetchSession();
+      if (!session) return alert('Please log in to comment.');
+      const input = document.querySelector('[data-comment-input]');
+      const body = input?.value.trim();
+      if (!body) return;
+      await supabaseClient.from('comments').insert({ clip_id: activeClipId, user_id: session.user.id, body });
+      if (input) input.value = '';
+      loadComments(activeClipId);
+    }
+  });
+
+  document.addEventListener('velo:modal-closed', () => {
+    cleanupComments();
+    resetModalWarning();
   });
 };
 
@@ -1581,8 +1849,19 @@ const setupDashboardActions = () => {
   document.addEventListener('click', (event) => {
     const uploadBtn = event.target.closest('[data-action="upload-new"]');
     const collectionBtn = event.target.closest('[data-action="new-collection"]');
+    const gridBtn = event.target.closest('[data-action="dashboard-grid"]');
+    const tableBtn = event.target.closest('[data-action="dashboard-table"]');
     if (uploadBtn) window.location.href = 'upload.html';
     if (collectionBtn) createCollection();
+    if (gridBtn || tableBtn) {
+      const grid = document.querySelector('[data-dashboard-grid]');
+      if (!grid) return;
+      const view = tableBtn ? 'table' : 'grid';
+      grid.classList.toggle('table-view', view === 'table');
+      localStorage.setItem('velo-dashboard-view', view);
+      gridBtn?.classList.toggle('active', view === 'grid');
+      tableBtn?.classList.toggle('active', view === 'table');
+    }
   });
 };
 
@@ -1605,6 +1884,18 @@ const setupSettings = async () => {
   const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
   const settingInputs = document.querySelectorAll('[data-setting]');
   const pendingSettings = {};
+  const originalSettings = {};
+  const saveBtn = document.querySelector('[data-action="save-settings"]');
+
+  const setSaveState = (isDirty) => {
+    if (!saveBtn) return;
+    saveBtn.classList.toggle('is-dirty', isDirty);
+    saveBtn.classList.toggle('is-saved', !isDirty);
+  };
+
+  const isDirty = () =>
+    Object.keys(pendingSettings).some((key) => pendingSettings[key] !== originalSettings[key]);
+
   settingInputs.forEach((input) => {
     const key = input.dataset.setting;
     if (!key || !profile) return;
@@ -1618,7 +1909,9 @@ const setupSettings = async () => {
       input.checked = Boolean(profile[key]);
       pendingSettings[key] = profile[key];
     }
+    originalSettings[key] = pendingSettings[key];
   });
+  setSaveState(false);
 
   settingInputs.forEach((input) => {
     input.addEventListener('change', async () => {
@@ -1633,6 +1926,7 @@ const setupSettings = async () => {
         value = input.checked;
       }
       pendingSettings[key] = value;
+      setSaveState(isDirty());
     });
   });
 
@@ -1670,7 +1964,21 @@ const setupSettings = async () => {
     }
 
     if (action === 'save-settings') {
-      await supabaseClient.from('profiles').update(pendingSettings).eq('id', session.user.id);
+      const changes = {};
+      Object.keys(pendingSettings).forEach((key) => {
+        if (pendingSettings[key] !== originalSettings[key]) {
+          changes[key] = pendingSettings[key];
+        }
+      });
+      if (Object.keys(changes).length === 0) {
+        showToast('No changes to save');
+        return;
+      }
+      await supabaseClient.from('profiles').update(changes).eq('id', session.user.id);
+      Object.keys(pendingSettings).forEach((key) => {
+        originalSettings[key] = pendingSettings[key];
+      });
+      setSaveState(false);
       showToast('Settings saved');
     }
 
@@ -1684,7 +1992,18 @@ const setupSettings = async () => {
     }
 
     if (action === 'delete-account') {
-      alert('Delete account requires admin privileges in Supabase.');
+      const confirmFirst = confirm('Delete your account and all clips? This cannot be undone.');
+      if (!confirmFirst) return;
+      const confirmSecond = confirm('Final confirmation: delete everything for this account?');
+      if (!confirmSecond) return;
+      const { error } = await supabaseClient.rpc('delete_account');
+      if (error) {
+        console.error(error);
+        showToast('Delete failed. Contact support.');
+        return;
+      }
+      await supabaseClient.auth.signOut();
+      window.location.href = 'index.html';
     }
   });
 };
@@ -1741,6 +2060,7 @@ const bootstrap = async () => {
   setupDashboardTabs();
   setupDashboardActions();
   setupSettings();
+  initSiteCounter();
 
   if (page === 'explore') {
     setupExploreFilters();

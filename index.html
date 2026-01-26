@@ -62,6 +62,14 @@
           <svg class="icon"><use href="sprite.svg#icon-filter"></use></svg>
           More Filters
         </button>
+        <button class="button-secondary" data-action="clear-filters">Remove Filters</button>
+      </div>
+
+      <div class="panel advanced-filters" data-advanced-filters style="display:none; padding: 12px 14px;">
+        <div class="tag-row" style="justify-content: space-between;">
+          <strong>Advanced Filters</strong>
+          <div class="footer-note">More filter options coming soon.</div>
+        </div>
       </div>
 
       <div class="chip-row">
@@ -81,14 +89,23 @@
 
       <section class="grid cols-3" data-clips-grid></section>
 
-      <div class="footer-note">Showing 24 public clips • Auto-tag suggestions enabled</div>
+      <div class="footer-note">Showing 24 public clips - Auto-tag suggestions enabled</div>
     </div>
   </main>
 
   <div class="modal" data-modal>
     <div class="modal-card">
       <div>
-        <div class="player" data-modal-player>Fullscreen Clip Player</div>
+        <div class="player" data-modal-player>
+          Fullscreen Clip Player
+          <div class="content-warning-overlay" data-modal-warning>
+            <div class="content-warning-card">
+              <strong>Content warning</strong>
+              <span>This clip is blurred by request.</span>
+              <button class="button-primary" data-action="view-warning">View</button>
+            </div>
+          </div>
+        </div>
         <div class="progress" style="margin-top: 12px;">
           <span style="width: 65%;"></span>
         </div>
@@ -115,7 +132,11 @@
         <button class="button-secondary" data-close-modal>Close</button>
         <div class="section" style="margin-top: 0;">
           <h2>Comments (optional)</h2>
-          <div class="skeleton lg"></div>
+          <div class="comment-list" data-comment-list></div>
+          <div class="comment-form">
+            <textarea class="textarea" rows="3" placeholder="Add a comment..." data-comment-input></textarea>
+            <button class="button-primary" data-action="post-comment">Post comment</button>
+          </div>
         </div>
       </div>
     </div>
@@ -123,7 +144,7 @@
 
   <div class="toast-container"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js?v=20260124" defer></script>  <script src="supabase.js?v=20260124" defer></script>  <script src="app.js?v=20260124" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js-v=20260124" defer></script>  <script src="supabase.js-v=20260124" defer></script>  <script src="app.js-v=20260124" defer></script>
 </body>
 </html>
 

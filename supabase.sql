@@ -146,12 +146,40 @@ create table if not exists follows (
   primary key (follower_id, following_id)
 );
 
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'follows_no_self') then
+    alter table follows add constraint follows_no_self check (follower_id <> following_id);
+  end if;
+end;
+$$;
+
 -- Views (optional)
 create table if not exists views (
   clip_id uuid references clips(id) on delete cascade not null,
   viewer_id uuid references profiles(id) on delete set null,
   created_at timestamptz default now()
 );
+
+-- Comments
+create table if not exists comments (
+  id uuid primary key default uuid_generate_v4(),
+  clip_id uuid references clips(id) on delete cascade not null,
+  user_id uuid references profiles(id) on delete cascade not null,
+  body text not null,
+  created_at timestamptz default now()
+);
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'comments'
+  ) then
+    alter publication supabase_realtime add table comments;
+  end if;
+end;
+$$;
 
 -- Reports
 create table if not exists reports (
@@ -254,12 +282,43 @@ as $$
   limit 1;
 $$;
 
+create or replace function delete_account()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null then
+    raise exception 'Not authenticated';
+  end if;
+  delete from storage.objects
+    where owner = auth.uid()
+      and bucket_id in ('clips', 'thumbs');
+  delete from comments where user_id = auth.uid();
+  delete from follows where follower_id = auth.uid() or following_id = auth.uid();
+  delete from likes where user_id = auth.uid();
+  delete from saves where user_id = auth.uid();
+  delete from views where viewer_id = auth.uid();
+  delete from reports where reporter_id = auth.uid() or reported_user_id = auth.uid();
+  delete from collection_clips
+    where collection_id in (select id from collections where user_id = auth.uid());
+  delete from collections where user_id = auth.uid();
+  delete from clips where user_id = auth.uid();
+  delete from profiles where id = auth.uid();
+  delete from auth.users where id = auth.uid();
+end;
+$$;
+
+grant execute on function delete_account() to authenticated;
+
 -- Indexes
 create index if not exists clips_user_id_idx on clips(user_id);
 create index if not exists clips_visibility_idx on clips(visibility);
 create index if not exists clip_tags_tag_id_idx on clip_tags(tag_id);
 create index if not exists likes_user_id_idx on likes(user_id);
 create index if not exists saves_user_id_idx on saves(user_id);
+create index if not exists comments_clip_id_idx on comments(clip_id);
 create unique index if not exists clips_slug_idx on clips(clip_slug);
 
 -- RLS
@@ -271,6 +330,7 @@ alter table likes enable row level security;
 alter table saves enable row level security;
 alter table follows enable row level security;
 alter table views enable row level security;
+alter table comments enable row level security;
 alter table reports enable row level security;
 alter table collections enable row level security;
 alter table collection_clips enable row level security;
@@ -355,6 +415,16 @@ create policy "Users can unfollow" on follows
 -- Views policies
 create policy "Views are insertable" on views
   for insert with check (true);
+
+-- Comments policies
+create policy "Comments are viewable" on comments
+  for select using (true);
+
+create policy "Users can comment" on comments
+  for insert with check (auth.uid() = user_id);
+
+create policy "Users can delete own comments" on comments
+  for delete using (auth.uid() = user_id);
 
 -- Reports policies
 create policy "Reports are insertable" on reports
