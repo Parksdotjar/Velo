@@ -288,6 +288,7 @@ const dismissLoader = (delay = 900, callback) => {
 
 document.addEventListener('DOMContentLoaded', () => {
   document.body.classList.add('page-enter');
+  document.querySelector('.debug-banner')?.remove();
   showBuildBadge();
   prepareStagger();
   if (!loader) {

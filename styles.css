@@ -806,6 +806,10 @@ body.page-enter .page {
   box-shadow: inset 0 0 0 1px rgba(0,0,0,0.6);
 }
 
+.debug-banner {
+  display: none !important;
+}
+
 .debug-banner strong {
   color: var(--text-white);
 }
