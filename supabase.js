@@ -265,6 +265,18 @@ const buildClipVideoUrl = (videoPath) => {
   return `${SUPABASE_URL}/storage/v1/object/public/clips/${videoPath}`;
 };
 
+const buildClipThumbUrl = (thumbPath) => {
+  if (!thumbPath) return '';
+  return `${SUPABASE_URL}/storage/v1/object/public/thumbs/${thumbPath}`;
+};
+
+const getClipPageUrl = (clip) => {
+  if (!clip) return '';
+  return clip.visibility === 'unlisted'
+    ? `${getBaseUrl()}clip.html?slug=${clip.clip_slug}&secret=${clip.clip_secret}`
+    : `${getBaseUrl()}clip.html?id=${clip.id}`;
+};
+
 const startHoverPreview = (card) => {
   if (!card || card.dataset.previewing === 'true') return;
   if (document.body.classList.contains('modal-open')) return;
@@ -762,21 +774,97 @@ const loadClipPage = async () => {
   const embedEl = document.querySelector('[data-embed-code]');
   const player = document.querySelector('[data-clip-player]');
   const copyBtn = document.querySelector('[data-clip-copy]');
+  const likeBtn = document.querySelector('[data-clip-like]');
+  const saveBtn = document.querySelector('[data-clip-save]');
+  const downloadBtn = document.querySelector('[data-clip-download]');
+  const videoUrl = buildClipVideoUrl(clip.video_path);
+  const posterUrl = buildClipThumbUrl(clip.thumb_path);
+  const pageUrl = getClipPageUrl(clip);
   if (titleEl) titleEl.textContent = clip.title || 'Untitled Clip';
-  if (creatorEl) creatorEl.textContent = '@creator';
+  if (creatorEl) {
+    if (clip.user_id) {
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('username')
+        .eq('id', clip.user_id)
+        .single();
+      creatorEl.textContent = profile?.username ? `@${profile.username}` : '@creator';
+    } else {
+      creatorEl.textContent = '@creator';
+    }
+  }
   if (embedEl) {
-    const url = clip.visibility === 'unlisted'
-      ? `${getBaseUrl()}clip.html?slug=${clip.clip_slug}&secret=${clip.clip_secret}`
-      : `${getBaseUrl()}clip.html?id=${clip.id}`;
-    embedEl.textContent = `<iframe src=\"${url}\" width=\"640\" height=\"360\" frameborder=\"0\"></iframe>`;
-    if (copyBtn) copyBtn.onclick = async () => {
-      await navigator.clipboard.writeText(url);
-      showToast('Link copied');
+    if (!clip.allow_embed) {
+      embedEl.textContent = 'Embedding disabled by creator.';
+    } else if (videoUrl) {
+      embedEl.textContent = `<video src="${videoUrl}" controls playsinline poster="${posterUrl}" style="width:100%; max-width:640px; border-radius:12px;"></video>`;
+    } else {
+      embedEl.textContent = 'Embed unavailable.';
+    }
+  }
+  if (copyBtn) {
+    copyBtn.onclick = async () => {
+      const shareUrl = clip.allow_embed && videoUrl ? videoUrl : pageUrl;
+      await navigator.clipboard.writeText(shareUrl);
+      showToast(clip.allow_embed ? 'Discord-ready link copied' : 'Link copied');
     };
   }
   if (player) {
-    const url = `${SUPABASE_URL}/storage/v1/object/public/clips/${clip.video_path}`;
-    player.innerHTML = `<video src="${url}" controls playsinline style="width:100%; height:100%;"></video>`;
+    if (videoUrl) {
+      player.innerHTML = `<video src="${videoUrl}" controls playsinline poster="${posterUrl}" style="width:100%; height:100%;"></video>`;
+    } else {
+      player.textContent = 'Video unavailable.';
+    }
+  }
+  if (downloadBtn) {
+    downloadBtn.style.display = clip.allow_downloads ? 'inline-flex' : 'none';
+    downloadBtn.onclick = async () => {
+      if (!videoUrl) return;
+      try {
+        const response = await fetch(videoUrl);
+        if (!response.ok) throw new Error('Download failed');
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = blobUrl;
+        anchor.download = clip.video_path?.split('/').pop() || 'velo-clip';
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        URL.revokeObjectURL(blobUrl);
+      } catch (err) {
+        console.error(err);
+        showToast('Download failed');
+      }
+    };
+  }
+  if (likeBtn) {
+    likeBtn.onclick = async () => {
+      const session = await fetchSession();
+      if (!session) return alert('Please log in to like clips.');
+      const isActive = likeBtn.getAttribute('aria-pressed') === 'true';
+      if (isActive) {
+        await supabaseClient.from('likes').delete().eq('clip_id', clip.id).eq('user_id', session.user.id);
+        likeBtn.setAttribute('aria-pressed', 'false');
+      } else {
+        await supabaseClient.from('likes').insert({ clip_id: clip.id, user_id: session.user.id });
+        likeBtn.setAttribute('aria-pressed', 'true');
+      }
+    };
+  }
+  if (saveBtn) {
+    saveBtn.onclick = async () => {
+      const session = await fetchSession();
+      if (!session) return alert('Please log in to save clips.');
+      const isActive = saveBtn.getAttribute('aria-pressed') === 'true';
+      if (isActive) {
+        await supabaseClient.from('saves').delete().eq('clip_id', clip.id).eq('user_id', session.user.id);
+        saveBtn.setAttribute('aria-pressed', 'false');
+      } else {
+        await supabaseClient.from('saves').insert({ clip_id: clip.id, user_id: session.user.id });
+        saveBtn.setAttribute('aria-pressed', 'true');
+      }
+    };
   }
 };
 const hydrateUserReactions = async (clipIds) => {
@@ -869,11 +957,11 @@ const setupClipActions = () => {
       const clipId = card.getAttribute('data-clip-id');
       const clip = clipCache.get(clipId);
       if (clip) {
-        const shareUrl = clip.visibility === 'unlisted'
-          ? `${getBaseUrl()}clip.html?slug=${clip.clip_slug}&secret=${clip.clip_secret}`
-          : `${getBaseUrl()}clip.html?id=${clip.id}`;
+        const pageUrl = getClipPageUrl(clip);
+        const directUrl = clip.allow_embed ? buildClipVideoUrl(clip.video_path) : '';
+        const shareUrl = directUrl || pageUrl;
         await navigator.clipboard.writeText(shareUrl);
-        showToast('Link copied');
+        showToast(directUrl ? 'Discord-ready link copied' : 'Link copied');
       }
     }
 
@@ -1391,11 +1479,11 @@ const setupModalActions = () => {
     if (copyBtn && activeClipId) {
       const clip = clipCache.get(activeClipId);
       if (!clip) return;
-      const shareUrl = clip.visibility === 'unlisted'
-        ? `${getBaseUrl()}clip.html?slug=${clip.clip_slug}&secret=${clip.clip_secret}`
-        : `${getBaseUrl()}clip.html?id=${clip.id}`;
+      const pageUrl = getClipPageUrl(clip);
+      const directUrl = clip.allow_embed ? buildClipVideoUrl(clip.video_path) : '';
+      const shareUrl = directUrl || pageUrl;
       await navigator.clipboard.writeText(shareUrl);
-      showToast('Link copied');
+      showToast(directUrl ? 'Discord-ready link copied' : 'Link copied');
     }
 
     if (downloadBtn && activeClipId) {
