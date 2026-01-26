@@ -1565,7 +1565,6 @@ const loadAdmin = async () => {
 };
 
 const bootstrap = async () => {
-  initDebugBanner();
   if (!supabaseClient) {
     alert('Supabase client failed to load. Check your GitHub Pages URL config.');
     return;
