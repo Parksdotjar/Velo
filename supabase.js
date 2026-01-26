@@ -785,7 +785,6 @@ const loadClipPage = async () => {
   const videoUrl = buildClipVideoUrl(clip.video_path);
   const posterUrl = buildClipThumbUrl(clip.thumb_path);
   const pageUrl = getClipPageUrl(clip);
-  const redirectUrl = getShareRedirectUrl(clip);
   if (titleEl) titleEl.textContent = clip.title || 'Untitled Clip';
   if (creatorEl) {
     if (clip.user_id) {
@@ -800,24 +799,17 @@ const loadClipPage = async () => {
     }
   }
   if (embedEl) {
-    if (!clip.allow_embed) {
-      embedEl.textContent = 'Embedding disabled by creator.';
-    } else if (redirectUrl) {
-      embedEl.textContent = `<video src="${redirectUrl}" controls playsinline poster="${posterUrl}" style="width:100%; max-width:640px; border-radius:12px;"></video>`;
-    } else {
-      embedEl.textContent = 'Embed unavailable.';
-    }
+    embedEl.textContent = `<iframe src="${pageUrl}" width="640" height="360" frameborder="0"></iframe>`;
   }
   if (copyBtn) {
     copyBtn.onclick = async () => {
-      const shareUrl = redirectUrl || pageUrl;
-      await navigator.clipboard.writeText(shareUrl);
-      showToast(redirectUrl ? 'VELO link copied' : 'Link copied');
+      await navigator.clipboard.writeText(pageUrl);
+      showToast('Clip link copied');
     };
   }
   if (player) {
-    if (redirectUrl) {
-      player.innerHTML = `<video src="${redirectUrl}" controls playsinline poster="${posterUrl}" style="width:100%; height:100%;"></video>`;
+    if (videoUrl) {
+      player.innerHTML = `<video src="${videoUrl}" controls playsinline poster="${posterUrl}" style="width:100%; height:100%;"></video>`;
     } else {
       player.textContent = 'Video unavailable.';
     }
@@ -963,11 +955,9 @@ const setupClipActions = () => {
       const clipId = card.getAttribute('data-clip-id');
       const clip = clipCache.get(clipId);
       if (clip) {
-        const redirectUrl = getShareRedirectUrl(clip);
         const pageUrl = getClipPageUrl(clip);
-        const shareUrl = redirectUrl || pageUrl;
-        await navigator.clipboard.writeText(shareUrl);
-        showToast(redirectUrl ? 'VELO link copied' : 'Link copied');
+        await navigator.clipboard.writeText(pageUrl);
+        showToast('Clip link copied');
       }
     }
 
@@ -1485,11 +1475,9 @@ const setupModalActions = () => {
     if (copyBtn && activeClipId) {
       const clip = clipCache.get(activeClipId);
       if (!clip) return;
-      const redirectUrl = getShareRedirectUrl(clip);
       const pageUrl = getClipPageUrl(clip);
-      const shareUrl = redirectUrl || pageUrl;
-      await navigator.clipboard.writeText(shareUrl);
-      showToast(redirectUrl ? 'VELO link copied' : 'Link copied');
+      await navigator.clipboard.writeText(pageUrl);
+      showToast('Clip link copied');
     }
 
     if (downloadBtn && activeClipId) {
