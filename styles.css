@@ -712,6 +712,13 @@ body.page-enter .page {
   background: var(--panel-black);
 }
 
+.modal .meta-stack .section:last-of-type {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .section h2 {
   margin: 0 0 12px;
   font-size: 18px;
@@ -758,6 +765,7 @@ body.page-enter .page {
   gap: 18px;
   opacity: 0;
   transform: translateY(18px) scale(0.985);
+  max-height: 86vh;
 }
 
 .modal.active .modal-card {
@@ -791,6 +799,7 @@ body.page-enter .page {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-height: 0;
 }
 
 .meta-stack h3 {
@@ -1158,7 +1167,8 @@ body[data-stagger="on"] .player .clip-share-video {
   display: grid;
   gap: 10px;
   margin-top: 10px;
-  max-height: 240px;
+  flex: 1 1 auto;
+  max-height: none;
   overflow-y: auto;
 }
 
