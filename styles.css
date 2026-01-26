@@ -1159,6 +1159,8 @@ body[data-stagger="on"] .player .clip-share-video {
   display: none;
   align-items: center;
   justify-content: center;
+  padding: 24px;
+  backdrop-filter: blur(10px);
   z-index: 1500;
 }
 
@@ -1169,12 +1171,17 @@ body[data-stagger="on"] .player .clip-share-video {
 .prompt-card {
   width: min(420px, 92vw);
   background: linear-gradient(180deg, rgba(24, 28, 54, 0.95), rgba(16, 18, 32, 0.98));
-  border-radius: 16px;
+  border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   padding: 18px;
   display: grid;
   gap: 14px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+body.settings-blurred main,
+body.settings-blurred nav {
+  filter: blur(6px);
 }
 
 .prompt-header {
