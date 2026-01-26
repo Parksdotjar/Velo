@@ -9,6 +9,19 @@ export default {
       return new Response('Missing path', { status: 400 });
     }
     const target = `https://juagusbfswxcwenzegfg.supabase.co/storage/v1/object/public/${path}`;
-    return Response.redirect(target, 302);
+
+    const headers = new Headers();
+    const range = request.headers.get('Range');
+    if (range) headers.set('Range', range);
+
+    const upstream = await fetch(target, { headers });
+    const responseHeaders = new Headers(upstream.headers);
+    responseHeaders.set('Access-Control-Allow-Origin', '*');
+    responseHeaders.set('Content-Disposition', 'inline');
+
+    return new Response(upstream.body, {
+      status: upstream.status,
+      headers: responseHeaders
+    });
   }
 };
