@@ -759,6 +759,16 @@ body.page-enter .page {
   align-items: center;
   justify-content: center;
   color: var(--text-tertiary);
+  position: relative;
+  overflow: hidden;
+}
+
+.player video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  background: #000000;
 }
 
 .meta-stack {
