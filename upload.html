@@ -54,13 +54,13 @@
         <div class="dropzone">
           <div class="dropzone-content">
             <svg class="icon" style="width: 32px; height: 32px;"><use href="sprite.svg#icon-upload"></use></svg>
-            <strong>Drop your video here</strong>
+            <strong>Drop your videos here</strong>
             <span class="footer-note">MP4, MOV, up to 2GB</span>
-            <input type="file" data-upload-file accept="video/*" style="display:none;" />
+            <input type="file" data-upload-file accept="video/*" multiple style="display:none;" />
             <button class="button-secondary" type="button" onclick="document.querySelector('[data-upload-file]').click()">Select File</button>
           </div>
           <div class="upload-preview" data-upload-preview-container>
-            <video data-upload-preview controls muted playsinline></video>
+            <div class="upload-preview-status" data-upload-preview-status>Waiting for clips...</div>
           </div>
         </div>
 

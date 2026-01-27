@@ -478,14 +478,20 @@ body.page-enter .page {
   height: 100%;
   display: none;
   padding: 16px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
-.upload-preview video {
+.upload-preview-status {
   width: 100%;
-  max-height: 320px;
+  padding: 24px 18px;
   border-radius: var(--radius-md);
-  background: var(--deep-gray);
   border: 1px solid var(--border-gray);
+  background: var(--deep-gray);
+  color: var(--muted-white);
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .dropzone.has-preview .dropzone-content {
@@ -493,7 +499,7 @@ body.page-enter .page {
 }
 
 .dropzone.has-preview .upload-preview {
-  display: block;
+  display: flex;
 }
 
 
