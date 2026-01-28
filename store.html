@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Lost Signal Store — Dashboard</title>
+  <title>Lost Signal Store — Explore</title>
   <link rel="stylesheet" href="store.css" />
 </head>
 <body>
@@ -12,9 +12,9 @@
       <nav class="nav" aria-label="Main">
         <div class="nav-logo">Lost Signal</div>
         <div class="nav-links">
-          <a class="pill-link" href="store.html">Explore</a>
+          <a class="pill-link active" href="store.html">Explore</a>
           <a class="pill-link" href="pricing.html">Membership</a>
-          <a class="pill-link active" href="dashboard.html">Dashboard</a>
+          <a class="pill-link" href="dashboard.html">Dashboard</a>
           <a class="pill-link" href="help.html">Help</a>
         </div>
         <a class="nav-cta" href="https://www.patreon.com/15484552/join" target="_blank" rel="noreferrer">Join Patreon</a>
@@ -22,9 +22,9 @@
           ? Menu
         </button>
         <div class="mobile-menu" id="mobileMenu">
-          <a class="pill-link" href="store.html">Explore</a>
+          <a class="pill-link active" href="store.html">Explore</a>
           <a class="pill-link" href="pricing.html">Membership</a>
-          <a class="pill-link active" href="dashboard.html">Dashboard</a>
+          <a class="pill-link" href="dashboard.html">Dashboard</a>
           <a class="pill-link" href="help.html">Help</a>
           <a class="pill-link" href="https://www.patreon.com/15484552/join" target="_blank" rel="noreferrer">Join Patreon</a>
         </div>
@@ -32,40 +32,36 @@
     </header>
 
     <section class="hero">
-      <h1>Dashboard</h1>
-      <p>Demo access level and download history.</p>
+      <h1>Lost Signal Store</h1>
+      <p>Editing assets unlocked with Patreon.</p>
+      <div class="hero-actions">
+        <a class="btn" href="pricing.html">View Membership</a>
+        <a class="btn secondary" href="#catalog">Browse Assets</a>
+      </div>
     </section>
 
-    <section class="container">
-      <div class="dashboard-grid">
-        <div class="detail-panel">
-          <h3>Access level</h3>
-          <p class="note">Current tier: <strong data-access-level>Free</strong></p>
-          <label class="note" for="accessSelect">Demo only</label>
-          <select id="accessSelect" class="select" data-access-select>
-            <option value="free">Free</option>
-            <option value="supporter">Supporter</option>
-            <option value="vip">VIP</option>
-          </select>
-          <div class="hero-actions" style="margin-top:16px;">
-            <a class="btn" href="https://www.patreon.com/15484552/join" target="_blank" rel="noreferrer">Join Patreon</a>
-            <a class="btn secondary" href="https://www.patreon.com/cw/LostSignalStore" target="_blank" rel="noreferrer">View Patreon Page</a>
-          </div>
+    <section class="container" id="catalog">
+      <h2 class="section-title">Explore assets</h2>
+      <div class="filters">
+        <input class="search" type="search" placeholder="Search assets, tags, types" data-search />
+        <div class="chips">
+          <button class="chip active" data-filter="All">All</button>
+          <button class="chip" data-filter="Free">Free</button>
+          <button class="chip" data-filter="Supporter">Supporter</button>
+          <button class="chip" data-filter="VIP">VIP</button>
+          <button class="chip" data-filter="SFX">SFX</button>
+          <button class="chip" data-filter="Overlay">Overlays</button>
+          <button class="chip" data-filter="Preset">Presets</button>
+          <button class="chip" data-filter="Transition">Transitions</button>
         </div>
-
-        <div class="detail-panel">
-          <h3>Download history</h3>
-          <div class="list" data-downloads></div>
-          <div style="margin-top:16px;">
-            <button class="btn ghost" data-clear-downloads type="button">Clear history</button>
-          </div>
-        </div>
+        <select class="select" data-sort>
+          <option value="Newest">Newest</option>
+          <option value="Featured">Featured</option>
+          <option value="Name">Name</option>
+        </select>
       </div>
 
-      <div class="section">
-        <h2 class="section-title">Locked recommendations</h2>
-        <div class="grid" data-locked-grid></div>
-      </div>
+      <div class="grid" data-asset-grid></div>
     </section>
 
     <footer class="footer">

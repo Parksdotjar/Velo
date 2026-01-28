@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lost Signal Store — Help</title>
+  <link rel="stylesheet" href="store.css" />
+</head>
+<body>
+  <div class="page">
+    <header class="nav-wrap">
+      <nav class="nav" aria-label="Main">
+        <div class="nav-logo">Lost Signal</div>
+        <div class="nav-links">
+          <a class="pill-link" href="store.html">Explore</a>
+          <a class="pill-link" href="pricing.html">Membership</a>
+          <a class="pill-link" href="dashboard.html">Dashboard</a>
+          <a class="pill-link active" href="help.html">Help</a>
+        </div>
+        <a class="nav-cta" href="https://www.patreon.com/15484552/join" target="_blank" rel="noreferrer">Join Patreon</a>
+        <button class="mobile-toggle" type="button" aria-expanded="false" aria-controls="mobileMenu">
+          ? Menu
+        </button>
+        <div class="mobile-menu" id="mobileMenu">
+          <a class="pill-link" href="store.html">Explore</a>
+          <a class="pill-link" href="pricing.html">Membership</a>
+          <a class="pill-link" href="dashboard.html">Dashboard</a>
+          <a class="pill-link active" href="help.html">Help</a>
+          <a class="pill-link" href="https://www.patreon.com/15484552/join" target="_blank" rel="noreferrer">Join Patreon</a>
+        </div>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <h1>Help & Support</h1>
+      <p>Quick answers and how the store works.</p>
+    </section>
+
+    <section class="container">
+      <div class="detail-panel" style="margin-bottom: 26px;">
+        <h3>How it works</h3>
+        <ul class="kv">
+          <li>Join Patreon to unlock Supporter + VIP asset tiers.</li>
+          <li>Browse and download assets instantly once unlocked.</li>
+          <li>Access level updates automatically on your dashboard.</li>
+        </ul>
+        <div class="hero-actions" style="margin-top:16px;">
+          <a class="btn" href="https://www.patreon.com/15484552/join" target="_blank" rel="noreferrer">Join Patreon</a>
+          <a class="btn secondary" href="https://www.patreon.com/cw/LostSignalStore" target="_blank" rel="noreferrer">View Patreon Page</a>
+        </div>
+      </div>
+
+      <h2 class="section-title">FAQs</h2>
+      <div class="faq">
+        <div class="faq-item">
+          <button class="faq-question" type="button">
+            How do downloads work?
+            <span>+</span>
+          </button>
+          <div class="faq-answer">
+            Downloads unlock instantly after your Patreon membership is active.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" type="button">
+            What’s included in each tier?
+            <span>+</span>
+          </button>
+          <div class="faq-answer">
+            Free gets weekly starter packs. Supporter unlocks core assets. VIP gets everything.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" type="button">
+            Can I cancel anytime?
+            <span>+</span>
+          </button>
+          <div class="faq-answer">
+            Yes. Patreon memberships can be canceled any time.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" type="button">
+            Do I keep assets if I cancel?
+            <span>+</span>
+          </button>
+          <div class="faq-answer">
+            You keep downloaded assets, but access to new drops stops.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" type="button">
+            How do I upgrade to VIP?
+            <span>+</span>
+          </button>
+          <div class="faq-answer">
+            Use the Join Patreon button and select VIP on the membership page.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" type="button">
+            Where can I get support?
+            <span>+</span>
+          </button>
+          <div class="faq-answer">
+            Message on Patreon or reach out through the official store page.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer-links">
+        <a href="pricing.html">Membership</a>
+        <a href="store.html">Explore</a>
+        <a href="https://www.patreon.com/cw/LostSignalStore" target="_blank" rel="noreferrer">Patreon Page</a>
+      </div>
+      <div>© Lost Signal</div>
+    </footer>
+  </div>
+
+  <div class="modal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <h3 id="modalTitle">Access required</h3>
+      <p data-modal-text>This asset requires Supporter/VIP.</p>
+      <div class="hero-actions">
+        <a class="btn" data-modal-join href="https://www.patreon.com/15484552/join" target="_blank" rel="noreferrer">Join on Patreon</a>
+        <a class="btn secondary" data-modal-view href="https://www.patreon.com/cw/LostSignalStore" target="_blank" rel="noreferrer">View Patreon Page</a>
+      </div>
+      <div style="margin-top:16px;">
+        <button class="btn ghost" data-modal-close type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" role="status" aria-live="polite"></div>
+
+  <script src="store.js"></script>
+</body>
+</html>
