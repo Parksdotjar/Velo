@@ -921,6 +921,7 @@ const setupUpload = () => {
   const statusText = document.querySelector('[data-upload-status]');
   const dropzone = document.querySelector('.dropzone');
   const previewVideo = document.querySelector('[data-upload-preview]');
+  let isUploading = false;
   if (!uploadForm || !fileInput || !supabaseClient) return;
 
   fetchSession().then(async (session) => {
@@ -935,23 +936,61 @@ const setupUpload = () => {
     if (allowEmbed) allowEmbed.checked = Boolean(profile.default_allow_embed);
   });
 
+  const setStatusForSelection = (count) => {
+    if (!statusText || isUploading) return;
+    if (count > 1) {
+      statusText.textContent = 'Loading...';
+      setTimeout(() => {
+        if (!isUploading) statusText.textContent = `${count}/${count} clips loaded`;
+      }, 200);
+    } else {
+      statusText.textContent = 'Waiting for upload...';
+    }
+  };
+
+  const clearPreview = () => {
+    if (!previewVideo || !dropzone) return;
+    const previousUrl = previewVideo.dataset.previewUrl;
+    if (previousUrl) URL.revokeObjectURL(previousUrl);
+    previewVideo.removeAttribute('src');
+    previewVideo.removeAttribute('data-preview-url');
+    dropzone.classList.remove('has-preview');
+    dropzone.classList.remove('is-loading');
+  };
+
+  const handleSelectedFiles = (files) => {
+    if (!files || !files.length) {
+      clearPreview();
+      setStatusForSelection(0);
+      return;
+    }
+
+    if (files.length > 1) {
+      clearPreview();
+      setStatusForSelection(files.length);
+      return;
+    }
+
+    const file = files[0];
+    if (!file || !dropzone || !previewVideo) return;
+    clearPreview();
+    dropzone.classList.add('is-loading');
+    const url = URL.createObjectURL(file);
+    previewVideo.dataset.previewUrl = url;
+    previewVideo.src = url;
+    previewVideo.onloadeddata = () => {
+      dropzone.classList.remove('is-loading');
+      dropzone.classList.add('has-preview');
+    };
+    previewVideo.onerror = () => {
+      dropzone.classList.remove('is-loading');
+    };
+    setStatusForSelection(1);
+  };
+
   if (fileInput) {
     fileInput.addEventListener('change', () => {
-      const file = fileInput.files[0];
-      if (!file || !dropzone || !previewVideo) return;
-      const previousUrl = previewVideo.dataset.previewUrl;
-      if (previousUrl) URL.revokeObjectURL(previousUrl);
-      dropzone.classList.add('is-loading');
-      dropzone.classList.add('has-preview');
-      const url = URL.createObjectURL(file);
-      previewVideo.dataset.previewUrl = url;
-      previewVideo.src = url;
-      previewVideo.onloadeddata = () => {
-        dropzone.classList.remove('is-loading');
-      };
-      previewVideo.onerror = () => {
-        dropzone.classList.remove('is-loading');
-      };
+      handleSelectedFiles(Array.from(fileInput.files || []));
     });
   }
 
@@ -960,10 +999,10 @@ const setupUpload = () => {
     const session = await fetchSession();
     if (!session) return alert('Please log in first.');
 
-    const file = fileInput.files[0];
-    if (!file) return alert('Select a video file.');
+    const files = Array.from(fileInput.files || []);
+    if (!files.length) return alert('Select a video file.');
 
-    const title = uploadForm.querySelector('[name="title"]').value.trim();
+    const baseTitle = uploadForm.querySelector('[name="title"]').value.trim();
     const description = uploadForm.querySelector('[name="description"]').value.trim();
     const visibility = uploadForm.querySelector('[name="visibility"]:checked')?.value || 'public';
     const tagsRaw = uploadForm.querySelector('[name="tags"]').value;
@@ -972,57 +1011,80 @@ const setupUpload = () => {
     const allowEmbed = uploadForm.querySelector('[name="allow_embed"]').checked;
     const contentWarning = uploadForm.querySelector('[name="content_warning"]').checked;
 
-    if (statusText) statusText.textContent = 'Uploading...';
-    if (progressBar) progressBar.style.width = '20%';
+    if (!baseTitle) return alert('Title is required.');
 
-    const fileName = `${session.user.id}/${Date.now()}-${file.name}`;
-    const { error: uploadError } = await supabaseClient.storage.from('clips').upload(fileName, file);
-    if (uploadError) return alert(uploadError.message);
+    isUploading = true;
+    const total = files.length;
 
-    if (progressBar) progressBar.style.width = '60%';
-    if (statusText) statusText.textContent = 'Generating thumbnail...';
+    for (let index = 0; index < total; index += 1) {
+      const file = files[index];
+      const clipTitle = total > 1 ? `${baseTitle} ${index + 1}` : baseTitle;
 
-    const { blob, duration } = await createThumbnail(file);
-    let thumbPath = null;
-    if (blob) {
-      const thumbName = `${session.user.id}/${Date.now()}-${file.name}.jpg`;
-      const { error: thumbErr } = await supabaseClient.storage.from('thumbs').upload(thumbName, blob);
-      if (!thumbErr) thumbPath = thumbName;
-    }
+      if (statusText) statusText.textContent = `Uploading ${index + 1}/${total}...`;
+      if (progressBar) {
+        const base = 10;
+        const step = 60 * (index / total);
+        progressBar.style.width = `${base + step}%`;
+      }
 
-    if (progressBar) progressBar.style.width = '80%';
-    if (statusText) statusText.textContent = 'Publishing...';
+      const fileName = `${session.user.id}/${Date.now()}-${file.name}`;
+      const { error: uploadError } = await supabaseClient.storage.from('clips').upload(fileName, file);
+      if (uploadError) return alert(uploadError.message);
 
-    const slug = `${title}`.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    const clipSecret = randomSecret();
+      if (progressBar) {
+        const base = 70;
+        const step = 10 * (index / total);
+        progressBar.style.width = `${base + step}%`;
+      }
+      if (statusText) statusText.textContent = `Generating thumbnail ${index + 1}/${total}...`;
 
-    const { data: clipData, error: clipError } = await supabaseClient.from('clips').insert({
-      user_id: session.user.id,
-      title,
-      description,
-      visibility,
-      video_path: fileName,
-      thumb_path: thumbPath,
-      duration: `${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, '0')}`,
-      duration_seconds: Math.floor(duration),
-      allow_downloads: allowDownloads,
-      allow_embed: allowEmbed,
-      content_warning: contentWarning,
-      clip_slug: slug || `${session.user.id}-${Date.now()}`,
-      clip_secret: clipSecret
-    }).select().single();
+      const { blob, duration } = await createThumbnail(file);
+      let thumbPath = null;
+      if (blob) {
+        const thumbName = `${session.user.id}/${Date.now()}-${file.name}.jpg`;
+        const { error: thumbErr } = await supabaseClient.storage.from('thumbs').upload(thumbName, blob);
+        if (!thumbErr) thumbPath = thumbName;
+      }
 
-    if (clipError) return alert(clipError.message);
+      if (progressBar) {
+        const base = 80;
+        const step = 10 * (index / total);
+        progressBar.style.width = `${base + step}%`;
+      }
+      if (statusText) statusText.textContent = `Publishing ${index + 1}/${total}...`;
 
-    for (const tag of tags) {
-      const { data: tagRow } = await supabaseClient.from('tags').upsert({ name: tag }).select().single();
-      if (tagRow) {
-        await supabaseClient.from('clip_tags').insert({ clip_id: clipData.id, tag_id: tagRow.id });
+      const slug = `${clipTitle}`.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const clipSecret = randomSecret();
+
+      const { data: clipData, error: clipError } = await supabaseClient.from('clips').insert({
+        user_id: session.user.id,
+        title: clipTitle,
+        description,
+        visibility,
+        video_path: fileName,
+        thumb_path: thumbPath,
+        duration: `${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, '0')}`,
+        duration_seconds: Math.floor(duration),
+        allow_downloads: allowDownloads,
+        allow_embed: allowEmbed,
+        content_warning: contentWarning,
+        clip_slug: slug || `${session.user.id}-${Date.now()}`,
+        clip_secret: clipSecret
+      }).select().single();
+
+      if (clipError) return alert(clipError.message);
+
+      for (const tag of tags) {
+        const { data: tagRow } = await supabaseClient.from('tags').upsert({ name: tag }).select().single();
+        if (tagRow) {
+          await supabaseClient.from('clip_tags').insert({ clip_id: clipData.id, tag_id: tagRow.id });
+        }
       }
     }
 
     if (progressBar) progressBar.style.width = '100%';
-    if (statusText) statusText.textContent = 'Published.';
+    if (statusText) statusText.textContent = `Published ${total}/${total}.`;
+    isUploading = false;
     window.location.href = 'dashboard.html';
   });
 };
