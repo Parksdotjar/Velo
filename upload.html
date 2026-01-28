@@ -68,12 +68,12 @@
             <svg class="icon" style="width: 32px; height: 32px;"><use href="sprite.svg#icon-upload"></use></svg>
             <strong>Drop your video here</strong>
             <span class="footer-note">MP4, MOV, up to 2GB</span>
-            <span class="footer-note" data-upload-loaded></span>
             <input type="file" data-upload-file accept="video/*" multiple style="display:none;" />
             <button class="button-secondary" type="button" onclick="document.querySelector('[data-upload-file]').click()">Select Files</button>
           </div>
           <div class="upload-preview" data-upload-preview-container>
             <video data-upload-preview controls muted playsinline></video>
+            <div class="upload-preview-message" data-upload-loaded></div>
           </div>
         </div>
 
@@ -127,7 +127,7 @@
     </div>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js?v=20260128-02" defer></script>  <script src="supabase.js?v=20260128-02" defer></script>  <script src="app.js?v=20260128-02" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js?v=20260128-03" defer></script>  <script src="supabase.js?v=20260128-03" defer></script>  <script src="app.js?v=20260128-03" defer></script>
 </body>
 </html>
 

@@ -1567,6 +1567,7 @@ const setupUpload = () => {
     } else {
       loadedText.textContent = '';
     }
+    if (statusText && !isUploading) statusText.textContent = 'Waiting for upload...';
   };
 
   const clearPreview = () => {
@@ -1576,6 +1577,7 @@ const setupUpload = () => {
     previewVideo.removeAttribute('src');
     previewVideo.removeAttribute('data-preview-url');
     dropzone.classList.remove('has-preview');
+    dropzone.classList.remove('has-bulk');
   };
 
   const handleSelectedFiles = (files) => {
@@ -1587,6 +1589,7 @@ const setupUpload = () => {
 
     if (files.length > 1) {
       clearPreview();
+      dropzone.classList.add('has-bulk');
       setStatusForSelection(files.length);
       return;
     }
