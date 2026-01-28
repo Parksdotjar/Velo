@@ -217,6 +217,25 @@ create table if not exists collection_clips (
   primary key (collection_id, clip_id)
 );
 
+-- Storage buckets (clips, thumbs, avatars)
+do $$
+begin
+  begin
+    insert into storage.buckets (id, name, public)
+      values ('clips', 'clips', true)
+      on conflict (id) do nothing;
+    insert into storage.buckets (id, name, public)
+      values ('thumbs', 'thumbs', true)
+      on conflict (id) do nothing;
+    insert into storage.buckets (id, name, public)
+      values ('avatars', 'avatars', true)
+      on conflict (id) do nothing;
+  exception when insufficient_privilege then
+    raise notice 'Skipping storage.buckets inserts (insufficient privilege).';
+  end;
+end;
+$$;
+
 -- Storage policies (buckets: clips, thumbs, avatars)
 do $$
 begin
