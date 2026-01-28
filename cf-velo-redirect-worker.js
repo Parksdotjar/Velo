@@ -8,7 +8,7 @@ export default {
     if (!path) {
       return new Response('Missing path', { status: 400 });
     }
-    const target = `https://juagusbfswxcwenzegfg.supabase.co/storage/v1/object/public/${path}`;
+    const target = `http://supabasekong-lgg0kossss484cwcos4k0go0.199.48.60.94.sslip.io/storage/v1/object/public/${path}`;
 
     const userAgent = request.headers.get('User-Agent') || '';
     const accept = request.headers.get('Accept') || '';
