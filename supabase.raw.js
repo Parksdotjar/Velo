@@ -1,5 +1,5 @@
 ﻿﻿
-const SUPABASE_URL = 'http://supabase.velogg.org';
+const SUPABASE_URL = 'https://supabase.velogg.org';
 const SUPABASE_ANON_KEY = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc2OTU2OTQ0MCwiZXhwIjo0OTI1MjQzMDQwLCJyb2xlIjoiYW5vbiJ9.aUrVH2AfYa9FamE_1RTaTdbcznxwxopPQkJU5h4hGPo';
 
 const supabaseClient = window.supabase?.createClient - window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
