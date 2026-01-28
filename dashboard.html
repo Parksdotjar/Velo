@@ -1,9 +1,9 @@
-<!doctype html>
+ï»¿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Lost Signal Store — Dashboard</title>
+  <title>Lost Signal Store - Dashboard</title>
   <link rel="stylesheet" href="store.css" />
 </head>
 <body>
@@ -12,20 +12,28 @@
       <nav class="nav" aria-label="Main">
         <div class="nav-logo">Lost Signal</div>
         <div class="nav-links">
-          <a class="pill-link" href="store.html">Explore</a>
-          <a class="pill-link" href="pricing.html">Membership</a>
+          <a class="pill-link" href="index.html">Explore</a>
+          <a class="pill-link" href="store.html">Store</a>
+          <a class="pill-link" href="https://www.patreon.com/15484552/join" target="_blank" rel="noreferrer">Membership</a>
           <a class="pill-link active" href="dashboard.html">Dashboard</a>
           <a class="pill-link" href="help.html">Help</a>
+          <a class="pill-link" href="profile.html">Account</a>
+          <a class="pill-link" href="settings.html">Settings</a>
         </div>
+        <a class="nav-cta store-cta" href="store.html"><span>Store</span><small>Coming soon</small></a>
         <a class="nav-cta" href="https://www.patreon.com/15484552/join" target="_blank" rel="noreferrer">Join Patreon</a>
         <button class="mobile-toggle" type="button" aria-expanded="false" aria-controls="mobileMenu">
-          ? Menu
+          Menu
         </button>
         <div class="mobile-menu" id="mobileMenu">
-          <a class="pill-link" href="store.html">Explore</a>
-          <a class="pill-link" href="pricing.html">Membership</a>
+          <a class="pill-link" href="index.html">Explore</a>
+          <a class="pill-link" href="store.html">Store</a>
+          <a class="pill-link" href="https://www.patreon.com/15484552/join" target="_blank" rel="noreferrer">Membership</a>
           <a class="pill-link active" href="dashboard.html">Dashboard</a>
           <a class="pill-link" href="help.html">Help</a>
+          <a class="pill-link" href="profile.html">Account</a>
+          <a class="pill-link" href="settings.html">Settings</a>
+          <a class="pill-link" href="store.html">Store (Coming soon)</a>
           <a class="pill-link" href="https://www.patreon.com/15484552/join" target="_blank" rel="noreferrer">Join Patreon</a>
         </div>
       </nav>
@@ -33,20 +41,15 @@
 
     <section class="hero">
       <h1>Dashboard</h1>
-      <p>Demo access level and download history.</p>
+      <p>Access status and download history.</p>
     </section>
 
     <section class="container">
       <div class="dashboard-grid">
         <div class="detail-panel">
-          <h3>Access level</h3>
+          <h3>Account access</h3>
+          <p class="note">Access sync from Patreon is coming soon.</p>
           <p class="note">Current tier: <strong data-access-level>Free</strong></p>
-          <label class="note" for="accessSelect">Demo only</label>
-          <select id="accessSelect" class="select" data-access-select>
-            <option value="free">Free</option>
-            <option value="supporter">Supporter</option>
-            <option value="vip">VIP</option>
-          </select>
           <div class="hero-actions" style="margin-top:16px;">
             <a class="btn" href="https://www.patreon.com/15484552/join" target="_blank" rel="noreferrer">Join Patreon</a>
             <a class="btn secondary" href="https://www.patreon.com/cw/LostSignalStore" target="_blank" rel="noreferrer">View Patreon Page</a>
@@ -70,18 +73,18 @@
 
     <footer class="footer">
       <div class="footer-links">
-        <a href="pricing.html">Membership</a>
+        <a href="https://www.patreon.com/15484552/join" target="_blank" rel="noreferrer">Membership</a>
         <a href="help.html">Support</a>
         <a href="https://www.patreon.com/cw/LostSignalStore" target="_blank" rel="noreferrer">Patreon Page</a>
       </div>
-      <div>© Lost Signal</div>
+      <div>Â© Lost Signal</div>
     </footer>
   </div>
 
   <div class="modal" aria-hidden="true">
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
       <h3 id="modalTitle">Access required</h3>
-      <p data-modal-text>This asset requires Supporter/VIP.</p>
+      <p data-modal-text>This asset requires Supporter or VIP.</p>
       <div class="hero-actions">
         <a class="btn" data-modal-join href="https://www.patreon.com/15484552/join" target="_blank" rel="noreferrer">Join on Patreon</a>
         <a class="btn secondary" data-modal-view href="https://www.patreon.com/cw/LostSignalStore" target="_blank" rel="noreferrer">View Patreon Page</a>

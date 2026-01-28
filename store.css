@@ -114,11 +114,34 @@ img {
   color: #000;
   font-weight: 600;
   transition: transform 0.2s ease, opacity 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .nav-cta:hover {
   transform: translateY(-1px) scale(1.02);
   opacity: 0.95;
+}
+
+.nav-cta.store-cta {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
+}
+
+.nav-cta.store-cta span {
+  font-size: 0.88rem;
+}
+
+.nav-cta.store-cta small {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .mobile-toggle {
