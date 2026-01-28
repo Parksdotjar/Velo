@@ -921,6 +921,7 @@ const setupUpload = () => {
   const statusText = document.querySelector('[data-upload-status]');
   const dropzone = document.querySelector('.dropzone');
   const previewVideo = document.querySelector('[data-upload-preview]');
+  const loadedText = document.querySelector('[data-upload-loaded]');
   let isUploading = false;
   if (!uploadForm || !fileInput || !supabaseClient) return;
 
@@ -937,14 +938,14 @@ const setupUpload = () => {
   });
 
   const setStatusForSelection = (count) => {
-    if (!statusText || isUploading) return;
+    if (!loadedText || isUploading) return;
     if (count > 1) {
-      statusText.textContent = 'Loading...';
+      loadedText.textContent = 'Loading...';
       setTimeout(() => {
-        if (!isUploading) statusText.textContent = `${count}/${count} clips loaded`;
+        if (!isUploading) loadedText.textContent = `${count}/${count} clips loaded`;
       }, 200);
     } else {
-      statusText.textContent = 'Waiting for upload...';
+      loadedText.textContent = '';
     }
   };
 
@@ -1002,6 +1003,7 @@ const setupUpload = () => {
     const files = Array.from(fileInput.files || []);
     if (!files.length) return alert('Select a video file.');
 
+    if (loadedText) loadedText.textContent = '';
     const baseTitle = uploadForm.querySelector('[name="title"]').value.trim();
     const description = uploadForm.querySelector('[name="description"]').value.trim();
     const visibility = uploadForm.querySelector('[name="visibility"]:checked')?.value || 'public';
