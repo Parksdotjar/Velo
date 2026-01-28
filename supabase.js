@@ -1559,14 +1559,7 @@ const setupUpload = () => {
 
   const setStatusForSelection = (count) => {
     if (!loadedText || isUploading) return;
-    if (count > 1) {
-      loadedText.textContent = 'Loading...';
-      setTimeout(() => {
-        if (!isUploading) loadedText.textContent = `${count}/${count} clips loaded`;
-      }, 200);
-    } else {
-      loadedText.textContent = '';
-    }
+    loadedText.textContent = '';
     if (statusText && !isUploading) statusText.textContent = 'Waiting for upload...';
   };
 
@@ -1750,7 +1743,8 @@ const setupUpload = () => {
     }
 
     if (progressBar) progressBar.style.width = '100%';
-    if (statusText) statusText.textContent = `Published ${total}/${total}.`;
+    if (statusText) statusText.textContent = 'Published.';
+    if (loadedText && total > 1) loadedText.textContent = `${total}/${total} clips uploaded`;
     isUploading = false;
     finishPublishOverlay(() => {
       window.location.href = 'dashboard.html';
