@@ -359,12 +359,22 @@ img {
   background: rgba(255, 255, 255, 0.08);
 }
 
-.badge.supporter {
-  background: rgba(255, 255, 255, 0.14);
+.badge.lite {
+  background: rgba(255, 255, 255, 0.12);
   color: #fff;
 }
 
-.badge.vip {
+.badge.creator {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.badge.studio {
+  background: rgba(255, 255, 255, 0.24);
+  color: #fff;
+}
+
+.badge.unlimited {
   background: #fff;
   color: #000;
 }

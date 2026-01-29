@@ -1,8 +1,10 @@
-const ACCESS_KEY = 'lostsignal_access';
+﻿const ACCESS_KEY = 'lostsignal_access';
 const DOWNLOADS_KEY = 'lostsignal_downloads';
 const DEFAULT_ACCESS = 'free';
 const MEMBERSHIP_URL = 'https://www.patreon.com/15484552/join';
 const PATREON_URL = 'https://www.patreon.com/cw/LostSignalStore';
+
+const accessOrder = ['free', 'lite', 'creator', 'studio', 'unlimited'];
 
 const assets = [
   {
@@ -22,7 +24,7 @@ const assets = [
     title: 'Analog Grain Overlays',
     description: 'High-res texture overlays with film grit and dust.',
     type: 'Overlay',
-    required_access: 'supporter',
+    required_access: 'creator',
     tags: ['film', 'texture', 'overlay'],
     file_size: '320 MB',
     updated: '2026-01-18',
@@ -34,7 +36,7 @@ const assets = [
     title: 'Subtitle Motion Pack',
     description: 'Stylized subtitle presets with motion blur.',
     type: 'Subtitles',
-    required_access: 'supporter',
+    required_access: 'lite',
     tags: ['text', 'captions', 'motion'],
     file_size: '42 MB',
     updated: '2026-01-05',
@@ -46,7 +48,7 @@ const assets = [
     title: 'Signal Transition Pack',
     description: 'Glitch, warp, and static transitions for cuts.',
     type: 'Transition Pack',
-    required_access: 'vip',
+    required_access: 'studio',
     tags: ['glitch', 'cut', 'warp'],
     file_size: '210 MB',
     updated: '2026-01-21',
@@ -70,7 +72,7 @@ const assets = [
     title: 'Midnight Grade Presets',
     description: 'Cinematic grading presets tuned for dark scenes.',
     type: 'Preset Pack',
-    required_access: 'supporter',
+    required_access: 'lite',
     tags: ['color', 'grade', 'cinematic'],
     file_size: '24 MB',
     updated: '2026-01-10',
@@ -82,7 +84,7 @@ const assets = [
     title: 'Cyber UI SFX',
     description: 'Button taps, scans, and futuristic UI sounds.',
     type: 'SFX',
-    required_access: 'vip',
+    required_access: 'studio',
     tags: ['ui', 'tech', 'interface'],
     file_size: '64 MB',
     updated: '2026-01-03',
@@ -94,7 +96,7 @@ const assets = [
     title: 'Signal Noise Overlays',
     description: 'Noise, scanlines, and signal distortion layers.',
     type: 'Overlay',
-    required_access: 'supporter',
+    required_access: 'creator',
     tags: ['noise', 'scanline', 'retro'],
     file_size: '190 MB',
     updated: '2026-01-14',
@@ -106,7 +108,7 @@ const assets = [
     title: 'VHS Damage Pack',
     description: 'Tape warps, dropouts, and analog flicker.',
     type: 'Preset Pack',
-    required_access: 'vip',
+    required_access: 'studio',
     tags: ['vhs', 'retro', 'texture'],
     file_size: '156 MB',
     updated: '2025-12-18',
@@ -130,7 +132,7 @@ const assets = [
     title: 'Deep Shadow LUTs',
     description: 'High-contrast LUTs for moody footage.',
     type: 'Preset Pack',
-    required_access: 'supporter',
+    required_access: 'creator',
     tags: ['lut', 'color', 'shadow'],
     file_size: '12 MB',
     updated: '2026-01-08',
@@ -142,7 +144,7 @@ const assets = [
     title: 'Kinetic Text Animations',
     description: 'Fast, punchy typography animations.',
     type: 'Subtitles',
-    required_access: 'vip',
+    required_access: 'unlimited',
     tags: ['text', 'kinetic', 'motion'],
     file_size: '72 MB',
     updated: '2026-01-19',
@@ -167,7 +169,11 @@ const previewStyles = {
 };
 
 function getAccess() {
-  return localStorage.getItem(ACCESS_KEY) || DEFAULT_ACCESS;
+  const stored = localStorage.getItem(ACCESS_KEY) || DEFAULT_ACCESS;
+  if (stored === 'supporter') return 'creator';
+  if (stored === 'vip') return 'studio';
+  if (!accessOrder.includes(stored)) return DEFAULT_ACCESS;
+  return stored;
 }
 
 function setAccess(level) {
@@ -175,11 +181,11 @@ function setAccess(level) {
 }
 
 function hasAccess(required) {
-  const order = ['free', 'supporter', 'vip'];
-  return order.indexOf(getAccess()) >= order.indexOf(required);
+  return accessOrder.indexOf(getAccess()) >= accessOrder.indexOf(required);
 }
 
 function formatTier(tier) {
+  if (tier === 'unlimited') return 'Unlimited';
   return tier.charAt(0).toUpperCase() + tier.slice(1);
 }
 
@@ -228,7 +234,7 @@ function createAssetCard(asset) {
       <div class="preview" style="background:${preview}"></div>
       ${renderBadge(asset.required_access)}
       <h3>${asset.title}</h3>
-      <div class="meta">${asset.type} � Updated ${asset.updated}</div>
+      <div class="meta">${asset.type} • Updated ${asset.updated}</div>
       <p class="meta">${asset.description}</p>
       <div class="card-actions">
         <a class="btn secondary" href="asset.html?id=${asset.id}">View</a>
@@ -242,17 +248,15 @@ function applyFilters(list, query, chip, sort) {
   let filtered = list.slice();
   if (query) {
     const q = query.toLowerCase();
-    filtered = filtered.filter((asset) => {
-      return (
-        asset.title.toLowerCase().includes(q) ||
-        asset.type.toLowerCase().includes(q) ||
-        asset.tags.join(' ').toLowerCase().includes(q)
-      );
-    });
+    filtered = filtered.filter((asset) => (
+      asset.title.toLowerCase().includes(q) ||
+      asset.type.toLowerCase().includes(q) ||
+      asset.tags.join(' ').toLowerCase().includes(q)
+    ));
   }
 
   if (chip && chip !== 'All') {
-    if (['Free', 'Supporter', 'VIP'].includes(chip)) {
+    if (['Free', 'Lite', 'Creator', 'Studio', 'Unlimited'].includes(chip)) {
       filtered = filtered.filter((asset) => formatTier(asset.required_access) === chip);
     } else {
       filtered = filtered.filter((asset) => asset.type.toLowerCase().includes(chip.toLowerCase()));
@@ -344,7 +348,6 @@ function initAssetPage() {
 
 function initDashboardPage() {
   const levelEl = document.querySelector('[data-access-level]');
-  const selectEl = document.querySelector('[data-access-select]');
   const downloadsEl = document.querySelector('[data-downloads]');
   const clearBtn = document.querySelector('[data-clear-downloads]');
   const lockedEl = document.querySelector('[data-locked-grid]');
@@ -366,7 +369,6 @@ function initDashboardPage() {
 
   function renderLocked() {
     if (!lockedEl) return;
-    const current = getAccess();
     const locked = assets.filter((asset) => !hasAccess(asset.required_access));
     lockedEl.innerHTML = locked.slice(0, 4).map(createAssetCard).join('') || '<div class="note">No locked assets.</div>';
   }
@@ -374,15 +376,8 @@ function initDashboardPage() {
   function updateAccess(level) {
     setAccess(level);
     levelEl.textContent = formatTier(level);
-    if (selectEl) selectEl.value = level;
     renderDownloads();
     renderLocked();
-  }
-
-  if (selectEl) {
-    selectEl.addEventListener('change', (event) => {
-      updateAccess(event.target.value);
-    });
   }
 
   if (clearBtn) {
