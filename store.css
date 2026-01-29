@@ -131,11 +131,11 @@ img {
 }
 
 .icon-button {
-  width: 34px;
-  height: 34px;
-  border-radius: var(--pill);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.06);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: transparent;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -149,15 +149,10 @@ img {
 }
 
 .icon {
-  width: 16px;
-  height: 16px;
-  fill: currentColor;
-}
-
-/* Match sprite icon stroke weight visually */
-.icon use {
-  transform-origin: center;
-  transform: scale(0.92);
+  width: 18px;
+  height: 18px;
+  stroke: #fff;
+  fill: none;
 }
 
 .mobile-toggle {
