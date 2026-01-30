@@ -440,15 +440,16 @@ const updateFollowerCount = async (userId) => {
 };
 
 const renderCommentItem = (comment) => {
-  const username = comment.profiles?.username || 'user';
+  const username = escapeHtml(comment.profiles?.username || 'user');
   const time = comment.created_at ? formatTimeAgo(comment.created_at) : '';
+  const body = escapeHtml(comment.body || '');
   return `
     <div class="comment-item" data-comment-id="${comment.id}">
       <div class="comment-meta">
         <span>@${username}</span>
         <span>${time}</span>
       </div>
-      <div>${comment.body || ''}</div>
+      <div>${body}</div>
     </div>
   `;
 };
@@ -575,9 +576,19 @@ const openClipViewer = () => {
   document.body.classList.add('modal-open');
 };
 
+const escapeHtml = (value) => {
+  if (value === null || value === undefined) return '';
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
 const buildClipCard = (clip) => {
   const tags = (clip.clip_tags || []).map((ct) => ct.tags?.name).filter(Boolean);
-  const creator = clip.profiles?.username || 'unknown';
+  const creator = escapeHtml(clip.profiles?.username || 'unknown');
   const creatorId = clip.profiles?.id || '';
   const time = formatTimeAgo(clip.created_at);
   const thumbUrl = clip.thumb_path
@@ -586,20 +597,22 @@ const buildClipCard = (clip) => {
   const likesCount = clip.likes_count ?? 0;
   const likeIcon = 'sprite.svg#icon-heart';
   const isWarning = Boolean(clip.content_warning);
+  const title = escapeHtml(clip.title || 'Untitled Clip');
+  const duration = escapeHtml(clip.duration || '00:00');
 
   return `
     <article class="clip-card${isWarning ? ' is-warning' : ''}" data-open-modal data-clip-id="${clip.id}" data-user-id="${creatorId}" data-video-path="${clip.video_path || ''}"${isWarning ? ' data-content-warning="true"' : ''}>
       <div class="clip-thumb">
         <div class="clip-thumb-media" style="${thumbUrl ? `background-image: url('${thumbUrl}'); background-size: cover; background-position: center;` : ''}"></div>
-        <div class="thumb-overlay">${clip.duration || '00:00'}</div>
+        <div class="thumb-overlay">${duration}</div>
         ${isWarning ? '<div class="thumb-warning">Content warning</div>' : ''}
       </div>
       <div class="clip-meta">
-        <h3>${clip.title || 'Untitled Clip'}</h3>
+        <h3>${title}</h3>
         <span><a class="creator-link" data-no-modal href="profile.html?user=${encodeURIComponent(creator)}">@${creator}</a> - ${time}</span>
       </div>
       <div class="tag-row">
-        ${tags.slice(0, 3).map((tag) => `<span class="tag">#${tag}</span>`).join('')}
+        ${tags.slice(0, 3).map((tag) => `<span class="tag">#${escapeHtml(tag)}</span>`).join('')}
       </div>
       <div class="quick-actions">
         <div class="tag-row">
@@ -631,12 +644,14 @@ const buildDashboardCard = (clip) => {
   const thumbUrl = clip.thumb_path
     ? `${SUPABASE_URL}/storage/v1/object/public/thumbs/${clip.thumb_path}`
     : '';
+  const title = escapeHtml(clip.title || 'Untitled Clip');
+  const visibility = escapeHtml(clip.visibility || '');
   return `
     <article class="clip-card" data-clip-id="${clip.id}">
       <div class="clip-thumb" style="${thumbUrl ? `background-image: url('${thumbUrl}'); background-size: cover; background-position: center;` : ''}"></div>
       <div class="clip-meta">
-        <h3>${clip.title || 'Untitled Clip'}</h3>
-        <span>${clip.visibility} - ${formatTimeAgo(clip.created_at)}</span>
+        <h3>${title}</h3>
+        <span>${visibility} - ${formatTimeAgo(clip.created_at)}</span>
       </div>
       <div class="tag-row">
         <button class="button-secondary" data-action="edit">Edit</button>
@@ -1839,7 +1854,7 @@ const hydrateModal = async (clipId) => {
   }
   if (tagsEl) {
     const tags = (clip.clip_tags || []).map((ct) => ct.tags?.name).filter(Boolean);
-    tagsEl.innerHTML = tags.map((tag) => `<span class="tag">#${tag}</span>`).join('');
+    tagsEl.innerHTML = tags.map((tag) => `<span class="tag">#${escapeHtml(tag)}</span>`).join('');
   }
   if (followBtn) followBtn.setAttribute('data-follow-id', clip.profiles?.id || '');
   if (followBtn) {
