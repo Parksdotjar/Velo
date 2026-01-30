@@ -443,8 +443,9 @@ const renderCommentItem = (comment) => {
   const username = escapeHtml(comment.profiles?.username || 'user');
   const time = comment.created_at ? formatTimeAgo(comment.created_at) : '';
   const body = escapeHtml(comment.body || '');
+  const commentId = escapeHtml(comment.id || '');
   return `
-    <div class="comment-item" data-comment-id="${comment.id}">
+    <div class="comment-item" data-comment-id="${commentId}">
       <div class="comment-meta">
         <span>@${username}</span>
         <span>${time}</span>
@@ -588,8 +589,9 @@ const escapeHtml = (value) => {
 
 const buildClipCard = (clip) => {
   const tags = (clip.clip_tags || []).map((ct) => ct.tags?.name).filter(Boolean);
-  const creator = escapeHtml(clip.profiles?.username || 'unknown');
-  const creatorId = clip.profiles?.id || '';
+  const rawCreator = clip.profiles?.username || 'unknown';
+  const creator = escapeHtml(rawCreator);
+  const creatorId = escapeHtml(clip.profiles?.id || '');
   const time = formatTimeAgo(clip.created_at);
   const thumbUrl = clip.thumb_path
     ? `${SUPABASE_URL}/storage/v1/object/public/thumbs/${clip.thumb_path}`
@@ -599,9 +601,11 @@ const buildClipCard = (clip) => {
   const isWarning = Boolean(clip.content_warning);
   const title = escapeHtml(clip.title || 'Untitled Clip');
   const duration = escapeHtml(clip.duration || '00:00');
+  const clipId = escapeHtml(clip.id || '');
+  const videoPath = escapeHtml(clip.video_path || '');
 
   return `
-    <article class="clip-card${isWarning ? ' is-warning' : ''}" data-open-modal data-clip-id="${clip.id}" data-user-id="${creatorId}" data-video-path="${clip.video_path || ''}"${isWarning ? ' data-content-warning="true"' : ''}>
+    <article class="clip-card${isWarning ? ' is-warning' : ''}" data-open-modal data-clip-id="${clipId}" data-user-id="${creatorId}" data-video-path="${videoPath}"${isWarning ? ' data-content-warning="true"' : ''}>
       <div class="clip-thumb">
         <div class="clip-thumb-media" style="${thumbUrl ? `background-image: url('${thumbUrl}'); background-size: cover; background-position: center;` : ''}"></div>
         <div class="thumb-overlay">${duration}</div>
@@ -609,7 +613,7 @@ const buildClipCard = (clip) => {
       </div>
       <div class="clip-meta">
         <h3>${title}</h3>
-        <span><a class="creator-link" data-no-modal href="profile.html?user=${encodeURIComponent(creator)}">@${creator}</a> - ${time}</span>
+        <span><a class="creator-link" data-no-modal href="profile.html?user=${encodeURIComponent(rawCreator)}">@${creator}</a> - ${time}</span>
       </div>
       <div class="tag-row">
         ${tags.slice(0, 3).map((tag) => `<span class="tag">#${escapeHtml(tag)}</span>`).join('')}
@@ -646,8 +650,9 @@ const buildDashboardCard = (clip) => {
     : '';
   const title = escapeHtml(clip.title || 'Untitled Clip');
   const visibility = escapeHtml(clip.visibility || '');
+  const clipId = escapeHtml(clip.id || '');
   return `
-    <article class="clip-card" data-clip-id="${clip.id}">
+    <article class="clip-card" data-clip-id="${clipId}">
       <div class="clip-thumb" style="${thumbUrl ? `background-image: url('${thumbUrl}'); background-size: cover; background-position: center;` : ''}"></div>
       <div class="clip-meta">
         <h3>${title}</h3>
@@ -913,11 +918,11 @@ const loadCollections = async () => {
 
   const { data } = await query;
   grid.innerHTML = (data || []).map((col) => `
-    <article class="clip-card" data-collection-id="${col.id}">
+    <article class="clip-card" data-collection-id="${escapeHtml(col.id || '')}">
       <div class="clip-thumb"></div>
       <div class="clip-meta">
-        <h3>${col.title}</h3>
-        <span>${col.visibility} - ${formatTimeAgo(col.created_at)}</span>
+        <h3>${escapeHtml(col.title || 'Untitled')}</h3>
+        <span>${escapeHtml(col.visibility || '')} - ${formatTimeAgo(col.created_at)}</span>
       </div>
     </article>
   `).join('');
@@ -2214,10 +2219,10 @@ const loadAdmin = async () => {
     <div class="list-item">
       <div>
         <strong>Report ${rep.clip_id ? `Clip` : 'User'}</strong>
-        <div class="footer-note">Reason: ${rep.reason} - ${formatTimeAgo(rep.created_at)}</div>
+        <div class="footer-note">Reason: ${escapeHtml(rep.reason || '')} - ${formatTimeAgo(rep.created_at)}</div>
       </div>
       <div class="tag-row">
-        <button class="button-secondary" data-action="dismiss-report" data-report-id="${rep.id}">Dismiss</button>
+        <button class="button-secondary" data-action="dismiss-report" data-report-id="${escapeHtml(rep.id || '')}">Dismiss</button>
       </div>
     </div>
   `).join('');
