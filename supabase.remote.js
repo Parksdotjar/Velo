@@ -210,11 +210,17 @@ const buildDashboardCard = (clip) => {
 const clipCache = new Map();
 let currentClipId = null;
 
+const EXPLORE_PAGE_SIZE = 124;
+const EXPLORE_PAGE_WINDOW = 10;
+
 let exploreState = {
   sort: 'new',
   duration: null,
   tag: null,
-  search: ''
+  search: '',
+  page: 1,
+  totalCount: 0,
+  totalPages: 1
 };
 
 const parseSearch = (value) => {
@@ -222,6 +228,72 @@ const parseSearch = (value) => {
   const tags = parts.filter((p) => p.startsWith('#')).map((p) => p.replace('#', ''));
   const text = parts.filter((p) => !p.startsWith('#')).join(' ');
   return { text, tags };
+};
+
+const getExploreOrder = () => {
+  if (exploreState.sort === 'views') return ['views_count', 'created_at'];
+  if (exploreState.sort === 'likes') return ['likes_count', 'created_at'];
+  if (exploreState.sort === 'trending') return ['views_count', 'likes_count'];
+  return ['created_at'];
+};
+
+const applyExploreDuration = (query) => {
+  if (!exploreState.duration) return query;
+  const [min, max] = exploreState.duration.split('-');
+  if (max === '+') {
+    return query.or(`duration_seconds.is.null,duration_seconds.gte.${Number(min)}`);
+  }
+  return query.or(`duration_seconds.is.null,and(duration_seconds.gte.${Number(min)},duration_seconds.lt.${Number(max)})`);
+};
+
+const updateExploreStatus = (shown) => {
+  const note = document.querySelector('[data-explore-status]');
+  if (!note) return;
+  const total = exploreState.totalCount || 0;
+  if (!total) {
+    note.textContent = 'No public clips yet.';
+    return;
+  }
+  if (!shown) {
+    note.textContent = 'No clips match your filters.';
+    return;
+  }
+  const start = (exploreState.page - 1) * EXPLORE_PAGE_SIZE + 1;
+  const end = Math.min(total, start + shown - 1);
+  note.textContent = `Showing ${start}-${end} of ${total} public clips - Page ${exploreState.page} of ${exploreState.totalPages}`;
+};
+
+const renderExplorePagination = () => {
+  const pagination = document.querySelector('[data-pagination]');
+  if (!pagination) return;
+  const total = exploreState.totalCount || 0;
+  const totalPages = exploreState.totalPages || 1;
+  if (total <= EXPLORE_PAGE_SIZE) {
+    pagination.style.display = 'none';
+    return;
+  }
+  pagination.style.display = 'flex';
+  const prevBtn = pagination.querySelector('[data-page-prev]');
+  const nextBtn = pagination.querySelector('[data-page-next]');
+  const buttons = pagination.querySelector('[data-page-buttons]');
+  if (!buttons) return;
+
+  const currentPage = exploreState.page;
+  if (prevBtn) prevBtn.disabled = currentPage <= 1;
+  if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+
+  const windowStart = Math.max(1, currentPage - EXPLORE_PAGE_WINDOW + 1);
+  const windowEnd = Math.min(totalPages, windowStart + EXPLORE_PAGE_WINDOW - 1);
+  const pageButtons = [];
+  for (let page = windowStart; page <= windowEnd; page += 1) {
+    const isActive = page === currentPage;
+    pageButtons.push(`
+      <button class="button-secondary page-button${isActive ? ' active' : ''}" data-page="${page}"${isActive ? ' aria-current="page"' : ''}>
+        ${page}
+      </button>
+    `);
+  }
+  buttons.innerHTML = pageButtons.join('');
 };
 
 const loadExplore = async () => {
@@ -234,27 +306,51 @@ const loadExplore = async () => {
 
   let query = supabaseClient
     .from('clips')
-    .select(fullSelect)
-    .eq('visibility', 'public')
-    .order('created_at', { ascending: false });
+    .select(fullSelect, { count: 'exact' })
+    .eq('visibility', 'public');
 
   const { text, tags } = parseSearch(exploreState.search);
   if (text) {
     query = query.ilike('title', `%${text}%`);
   }
 
-  let { data, error } = await query.limit(80);
+  query = applyExploreDuration(query);
+  const [orderPrimary, orderSecondary] = getExploreOrder();
+  query = query.order(orderPrimary, { ascending: false });
+  if (orderSecondary) {
+    query = query.order(orderSecondary, { ascending: false });
+  }
+
+  const from = (exploreState.page - 1) * EXPLORE_PAGE_SIZE;
+  const to = from + EXPLORE_PAGE_SIZE - 1;
+  let { data, error, count } = await query.range(from, to);
   if (error) {
     console.error(error);
     showToast(`Explore error: ${error.message}`);
     // Fallback: fetch without joins if RLS blocks related tables
-    const fallback = await supabaseClient
+    let fallback = supabaseClient
       .from('clips')
-      .select(baseSelect)
-      .eq('visibility', 'public')
-      .order('created_at', { ascending: false })
-      .limit(80);
-    data = fallback.data || [];
+      .select(baseSelect, { count: 'exact' })
+      .eq('visibility', 'public');
+    if (text) {
+      fallback = fallback.ilike('title', `%${text}%`);
+    }
+    fallback = applyExploreDuration(fallback);
+    const [fallbackPrimary, fallbackSecondary] = getExploreOrder();
+    fallback = fallback.order(fallbackPrimary, { ascending: false });
+    if (fallbackSecondary) {
+      fallback = fallback.order(fallbackSecondary, { ascending: false });
+    }
+    const fallbackResult = await fallback.range(from, to);
+    data = fallbackResult.data || [];
+    count = fallbackResult.count;
+  }
+
+  exploreState.totalCount = count || 0;
+  exploreState.totalPages = Math.max(1, Math.ceil((count || 0) / EXPLORE_PAGE_SIZE));
+  if (exploreState.page > exploreState.totalPages) {
+    exploreState.page = exploreState.totalPages;
+    return loadExplore();
   }
 
   let filtered = data || [];
@@ -294,6 +390,8 @@ const loadExplore = async () => {
   filtered.forEach((clip) => clipCache.set(clip.id, clip));
 
   grid.innerHTML = filtered.map(buildClipCard).join('');
+  updateExploreStatus(filtered.length);
+  renderExplorePagination();
   await hydrateUserReactions(filtered.map((clip) => clip.id));
   if (window.veloStagger) {
     window.veloStagger.prepareStagger();
@@ -311,6 +409,7 @@ const setupExploreFilters = () => {
       clearTimeout(searchTimer);
       searchTimer = setTimeout(() => {
         exploreState.search = searchInput.value.trim();
+        exploreState.page = 1;
         loadExplore();
       }, 250);
     });
@@ -322,18 +421,21 @@ const setupExploreFilters = () => {
         document.querySelectorAll('[data-sort]').forEach((c) => c.classList.remove('active'));
         chip.classList.add('active');
         exploreState.sort = chip.dataset.sort;
+        exploreState.page = 1;
       }
 
       if (chip.dataset.duration) {
         document.querySelectorAll('[data-duration]').forEach((c) => c.classList.remove('active'));
         chip.classList.add('active');
         exploreState.duration = chip.dataset.duration === '60+' ? '60-+' : chip.dataset.duration;
+        exploreState.page = 1;
       }
 
       if (chip.dataset.tag) {
         document.querySelectorAll('[data-tag]').forEach((c) => c.classList.remove('active'));
         chip.classList.add('active');
         exploreState.tag = chip.dataset.tag;
+        exploreState.page = 1;
       }
 
       loadExplore();
@@ -346,6 +448,42 @@ const setupExploreFilters = () => {
       showToast('Advanced filters coming next.');
     });
   }
+};
+
+const setupExplorePagination = () => {
+  const pagination = document.querySelector('[data-pagination]');
+  if (!pagination) return;
+  const prevBtn = pagination.querySelector('[data-page-prev]');
+  const nextBtn = pagination.querySelector('[data-page-next]');
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      if (exploreState.page <= 1) return;
+      exploreState.page -= 1;
+      loadExplore();
+      scrollToTop();
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      if (exploreState.page >= exploreState.totalPages) return;
+      exploreState.page += 1;
+      loadExplore();
+      scrollToTop();
+    });
+  }
+
+  pagination.addEventListener('click', (event) => {
+    const pageBtn = event.target.closest('[data-page]');
+    if (!pageBtn) return;
+    const page = Number(pageBtn.getAttribute('data-page'));
+    if (!Number.isFinite(page) || page === exploreState.page) return;
+    exploreState.page = page;
+    loadExplore();
+    scrollToTop();
+  });
 };
 const loadDashboard = async () => {
   if (!supabaseClient) return;
@@ -1410,6 +1548,7 @@ const bootstrap = async () => {
 
   if (page === 'explore') {
     setupExploreFilters();
+    setupExplorePagination();
     await loadExplore();
   }
   if (page === 'dashboard') {

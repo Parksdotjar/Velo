@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --true-black: #000000;
   --panel-black: #0A0A0A;
   --deep-gray: #121212;
@@ -1047,6 +1047,32 @@ body.prompt-open nav {
   color: var(--text-tertiary);
   font-size: 12px;
   margin-top: 24px;
+}
+
+.pagination {
+  margin-top: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.page-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.page-button {
+  min-width: 40px;
+  justify-content: center;
+}
+
+.pagination button[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .auth-only {
