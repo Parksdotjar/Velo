@@ -1,5 +1,5 @@
 ﻿
-const SUPABASE_URL = 'https://supabase.velogg.org';
+const SUPABASE_URL = 'http://supabase.velogg.org';
 const SUPABASE_ANON_KEY = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc2OTU2OTQ0MCwiZXhwIjo0OTI1MjQzMDQwLCJyb2xlIjoiYW5vbiJ9.aUrVH2AfYa9FamE_1RTaTdbcznxwxopPQkJU5h4hGPo';
 
 const supabaseClient = window.supabase?.createClient ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
@@ -440,17 +440,15 @@ const updateFollowerCount = async (userId) => {
 };
 
 const renderCommentItem = (comment) => {
-  const username = escapeHtml(comment.profiles?.username || 'user');
+  const username = comment.profiles?.username || 'user';
   const time = comment.created_at ? formatTimeAgo(comment.created_at) : '';
-  const body = escapeHtml(comment.body || '');
-  const commentId = escapeHtml(comment.id || '');
   return `
-    <div class="comment-item" data-comment-id="${commentId}">
+    <div class="comment-item" data-comment-id="${comment.id}">
       <div class="comment-meta">
         <span>@${username}</span>
         <span>${time}</span>
       </div>
-      <div>${body}</div>
+      <div>${comment.body || ''}</div>
     </div>
   `;
 };
@@ -577,21 +575,10 @@ const openClipViewer = () => {
   document.body.classList.add('modal-open');
 };
 
-const escapeHtml = (value) => {
-  if (value === null || value === undefined) return '';
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-};
-
 const buildClipCard = (clip) => {
   const tags = (clip.clip_tags || []).map((ct) => ct.tags?.name).filter(Boolean);
-  const rawCreator = clip.profiles?.username || 'unknown';
-  const creator = escapeHtml(rawCreator);
-  const creatorId = escapeHtml(clip.profiles?.id || '');
+  const creator = clip.profiles?.username || 'unknown';
+  const creatorId = clip.profiles?.id || '';
   const time = formatTimeAgo(clip.created_at);
   const thumbUrl = clip.thumb_path
     ? `${SUPABASE_URL}/storage/v1/object/public/thumbs/${clip.thumb_path}`
@@ -599,24 +586,20 @@ const buildClipCard = (clip) => {
   const likesCount = clip.likes_count ?? 0;
   const likeIcon = 'sprite.svg#icon-heart';
   const isWarning = Boolean(clip.content_warning);
-  const title = escapeHtml(clip.title || 'Untitled Clip');
-  const duration = escapeHtml(clip.duration || '00:00');
-  const clipId = escapeHtml(clip.id || '');
-  const videoPath = escapeHtml(clip.video_path || '');
 
   return `
-    <article class="clip-card${isWarning ? ' is-warning' : ''}" data-open-modal data-clip-id="${clipId}" data-user-id="${creatorId}" data-video-path="${videoPath}"${isWarning ? ' data-content-warning="true"' : ''}>
+    <article class="clip-card${isWarning ? ' is-warning' : ''}" data-open-modal data-clip-id="${clip.id}" data-user-id="${creatorId}" data-video-path="${clip.video_path || ''}"${isWarning ? ' data-content-warning="true"' : ''}>
       <div class="clip-thumb">
         <div class="clip-thumb-media" style="${thumbUrl ? `background-image: url('${thumbUrl}'); background-size: cover; background-position: center;` : ''}"></div>
-        <div class="thumb-overlay">${duration}</div>
+        <div class="thumb-overlay">${clip.duration || '00:00'}</div>
         ${isWarning ? '<div class="thumb-warning">Content warning</div>' : ''}
       </div>
       <div class="clip-meta">
-        <h3>${title}</h3>
-        <span><a class="creator-link" data-no-modal href="profile.html?user=${encodeURIComponent(rawCreator)}">@${creator}</a> - ${time}</span>
+        <h3>${clip.title || 'Untitled Clip'}</h3>
+        <span><a class="creator-link" data-no-modal href="profile.html?user=${encodeURIComponent(creator)}">@${creator}</a> - ${time}</span>
       </div>
       <div class="tag-row">
-        ${tags.slice(0, 3).map((tag) => `<span class="tag">#${escapeHtml(tag)}</span>`).join('')}
+        ${tags.slice(0, 3).map((tag) => `<span class="tag">#${tag}</span>`).join('')}
       </div>
       <div class="quick-actions">
         <div class="tag-row">
@@ -648,15 +631,12 @@ const buildDashboardCard = (clip) => {
   const thumbUrl = clip.thumb_path
     ? `${SUPABASE_URL}/storage/v1/object/public/thumbs/${clip.thumb_path}`
     : '';
-  const title = escapeHtml(clip.title || 'Untitled Clip');
-  const visibility = escapeHtml(clip.visibility || '');
-  const clipId = escapeHtml(clip.id || '');
   return `
-    <article class="clip-card" data-clip-id="${clipId}">
+    <article class="clip-card" data-clip-id="${clip.id}">
       <div class="clip-thumb" style="${thumbUrl ? `background-image: url('${thumbUrl}'); background-size: cover; background-position: center;` : ''}"></div>
       <div class="clip-meta">
-        <h3>${title}</h3>
-        <span>${visibility} - ${formatTimeAgo(clip.created_at)}</span>
+        <h3>${clip.title || 'Untitled Clip'}</h3>
+        <span>${clip.visibility} - ${formatTimeAgo(clip.created_at)}</span>
       </div>
       <div class="tag-row">
         <button class="button-secondary" data-action="edit">Edit</button>
@@ -918,11 +898,11 @@ const loadCollections = async () => {
 
   const { data } = await query;
   grid.innerHTML = (data || []).map((col) => `
-    <article class="clip-card" data-collection-id="${escapeHtml(col.id || '')}">
+    <article class="clip-card" data-collection-id="${col.id}">
       <div class="clip-thumb"></div>
       <div class="clip-meta">
-        <h3>${escapeHtml(col.title || 'Untitled')}</h3>
-        <span>${escapeHtml(col.visibility || '')} - ${formatTimeAgo(col.created_at)}</span>
+        <h3>${col.title}</h3>
+        <span>${col.visibility} - ${formatTimeAgo(col.created_at)}</span>
       </div>
     </article>
   `).join('');
@@ -1542,24 +1522,13 @@ const setupUpload = () => {
   const statusText = document.querySelector('[data-upload-status]');
   const dropzone = document.querySelector('.dropzone');
   const previewVideo = document.querySelector('[data-upload-preview]');
-  const loadedText = document.querySelector('[data-upload-loaded]');
   const guidelinesBtn = document.querySelector('[data-action="guidelines"]');
   const guidelinesPanel = document.querySelector('[data-guidelines]');
-  const bulkInfoBtn = document.querySelector('[data-action="bulk-info"]');
-  const bulkInfoPanel = document.querySelector('[data-bulk-info]');
-  let isUploading = false;
 
   if (guidelinesBtn && guidelinesPanel) {
     guidelinesBtn.addEventListener('click', () => {
       const isOpen = guidelinesPanel.style.display !== 'none';
       guidelinesPanel.style.display = isOpen ? 'none' : 'block';
-    });
-  }
-
-  if (bulkInfoBtn && bulkInfoPanel) {
-    bulkInfoBtn.addEventListener('click', () => {
-      const isOpen = bulkInfoPanel.style.display !== 'none';
-      bulkInfoPanel.style.display = isOpen ? 'none' : 'block';
     });
   }
 
@@ -1577,46 +1546,11 @@ const setupUpload = () => {
     if (allowEmbed) allowEmbed.checked = Boolean(profile.default_allow_embed);
   });
 
-  const setStatusForSelection = (count) => {
-    if (!loadedText || isUploading) return;
-    if (count > 1) {
-      loadedText.textContent = 'Loading...';
-      setTimeout(() => {
-        if (!isUploading) loadedText.textContent = `${count}/${count} clips loaded`;
-      }, 200);
-    } else {
-      loadedText.textContent = '';
-    }
-    if (statusText && !isUploading) statusText.textContent = 'Waiting for upload...';
-  };
-
-  const clearPreview = () => {
-    if (!previewVideo || !dropzone) return;
+  const handleSelectedFile = (file) => {
+    if (!file || !dropzone || !previewVideo) return;
     const previousUrl = previewVideo.dataset.previewUrl;
     if (previousUrl) URL.revokeObjectURL(previousUrl);
-    previewVideo.removeAttribute('src');
-    previewVideo.removeAttribute('data-preview-url');
     dropzone.classList.remove('has-preview');
-    dropzone.classList.remove('has-bulk');
-  };
-
-  const handleSelectedFiles = (files) => {
-    if (!files || !files.length) {
-      clearPreview();
-      setStatusForSelection(0);
-      return;
-    }
-
-    if (files.length > 1) {
-      clearPreview();
-      dropzone.classList.add('has-bulk');
-      setStatusForSelection(files.length);
-      return;
-    }
-
-    const file = files[0];
-    if (!file || !dropzone || !previewVideo) return;
-    clearPreview();
     const url = URL.createObjectURL(file);
     previewVideo.dataset.previewUrl = url;
     previewVideo.src = url;
@@ -1626,12 +1560,11 @@ const setupUpload = () => {
     previewVideo.onerror = () => {
       dropzone.classList.remove('has-preview');
     };
-    setStatusForSelection(1);
   };
 
   if (fileInput) {
     fileInput.addEventListener('change', () => {
-      handleSelectedFiles(Array.from(fileInput.files || []));
+      handleSelectedFile(fileInput.files[0]);
     });
   }
 
@@ -1657,12 +1590,12 @@ const setupUpload = () => {
     });
 
     dropzone.addEventListener('drop', (event) => {
-      const files = Array.from(event.dataTransfer?.files || []);
-      if (!files.length) return;
+      const file = event.dataTransfer?.files?.[0];
+      if (!file) return;
       const transfer = new DataTransfer();
-      files.forEach((item) => transfer.items.add(item));
+      transfer.items.add(file);
       fileInput.files = transfer.files;
-      handleSelectedFiles(files);
+      handleSelectedFile(file);
     });
   }
 
@@ -1673,12 +1606,11 @@ const setupUpload = () => {
     const profile = await ensureProfile(session);
     if (!profile) return alert('Profile setup failed. Please try again.');
 
-    const files = Array.from(fileInput.files || []);
-    if (!files.length) return alert('Select a video file.');
+    const file = fileInput.files[0];
+    if (!file) return alert('Select a video file.');
 
     startPublishOverlay();
-    if (loadedText) loadedText.textContent = '';
-    const baseTitle = uploadForm.querySelector('[name="title"]').value.trim();
+    const title = uploadForm.querySelector('[name="title"]').value.trim();
     const description = uploadForm.querySelector('[name="description"]').value.trim();
     const visibility = uploadForm.querySelector('[name="visibility"]:checked')?.value || 'public';
     const tagsRaw = uploadForm.querySelector('[name="tags"]').value;
@@ -1687,91 +1619,63 @@ const setupUpload = () => {
     const allowEmbed = uploadForm.querySelector('[name="allow_embed"]').checked;
     const contentWarning = uploadForm.querySelector('[name="content_warning"]').checked;
 
-    if (!baseTitle) {
+    if (statusText) statusText.textContent = 'Uploading...';
+    if (progressBar) progressBar.style.width = '20%';
+
+    const fileName = `${session.user.id}/${Date.now()}-${safeFileName(file.name)}`;
+    const { error: uploadError } = await supabaseClient.storage.from('clips').upload(fileName, file);
+    if (uploadError) {
       hidePublishOverlay();
-      return alert('Title is required.');
+      return alert(uploadError.message);
     }
 
-    isUploading = true;
-    const total = files.length;
+    if (progressBar) progressBar.style.width = '60%';
+    if (statusText) statusText.textContent = 'Generating thumbnail...';
 
-    for (let index = 0; index < total; index += 1) {
-      const file = files[index];
-      const clipTitle = total > 1 ? `${baseTitle} ${index + 1}` : baseTitle;
+    const { blob, duration } = await createThumbnail(file);
+    let thumbPath = null;
+    if (blob) {
+      const thumbName = `${session.user.id}/${Date.now()}-${safeFileName(file.name)}.jpg`;
+      const { error: thumbErr } = await supabaseClient.storage.from('thumbs').upload(thumbName, blob);
+      if (!thumbErr) thumbPath = thumbName;
+    }
 
-      if (statusText) statusText.textContent = `Uploading ${index + 1}/${total}...`;
-      if (progressBar) {
-        const base = 10;
-        const step = 60 * (index / total);
-        progressBar.style.width = `${base + step}%`;
-      }
+    if (progressBar) progressBar.style.width = '80%';
+    if (statusText) statusText.textContent = 'Publishing...';
 
-      const fileName = `${session.user.id}/${Date.now()}-${safeFileName(file.name)}`;
-      const { error: uploadError } = await supabaseClient.storage.from('clips').upload(fileName, file);
-      if (uploadError) {
-        hidePublishOverlay();
-        isUploading = false;
-        return alert(uploadError.message);
-      }
+    const slug = `${title}`.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const clipSecret = randomSecret();
 
-      if (progressBar) {
-        const base = 70;
-        const step = 10 * (index / total);
-        progressBar.style.width = `${base + step}%`;
-      }
-      if (statusText) statusText.textContent = `Generating thumbnail ${index + 1}/${total}...`;
+    const { data: clipData, error: clipError } = await supabaseClient.from('clips').insert({
+      user_id: session.user.id,
+      title,
+      description,
+      visibility,
+      video_path: fileName,
+      thumb_path: thumbPath,
+      duration: `${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, '0')}`,
+      duration_seconds: Math.floor(duration),
+      allow_downloads: allowDownloads,
+      allow_embed: allowEmbed,
+      content_warning: contentWarning,
+      clip_slug: slug || `${session.user.id}-${Date.now()}`,
+      clip_secret: clipSecret
+    }).select().single();
 
-      const { blob, duration } = await createThumbnail(file);
-      let thumbPath = null;
-      if (blob) {
-        const thumbName = `${session.user.id}/${Date.now()}-${safeFileName(file.name)}.jpg`;
-        const { error: thumbErr } = await supabaseClient.storage.from('thumbs').upload(thumbName, blob);
-        if (!thumbErr) thumbPath = thumbName;
-      }
+    if (clipError) {
+      hidePublishOverlay();
+      return alert(clipError.message);
+    }
 
-      if (progressBar) {
-        const base = 80;
-        const step = 10 * (index / total);
-        progressBar.style.width = `${base + step}%`;
-      }
-      if (statusText) statusText.textContent = `Publishing ${index + 1}/${total}...`;
-
-      const slug = `${clipTitle}`.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-      const clipSecret = randomSecret();
-
-      const { data: clipData, error: clipError } = await supabaseClient.from('clips').insert({
-        user_id: session.user.id,
-        title: clipTitle,
-        description,
-        visibility,
-        video_path: fileName,
-        thumb_path: thumbPath,
-        duration: `${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, '0')}`,
-        duration_seconds: Math.floor(duration),
-        allow_downloads: allowDownloads,
-        allow_embed: allowEmbed,
-        content_warning: contentWarning,
-        clip_slug: slug || `${session.user.id}-${Date.now()}`,
-        clip_secret: clipSecret
-      }).select().single();
-
-      if (clipError) {
-        hidePublishOverlay();
-        isUploading = false;
-        return alert(clipError.message);
-      }
-
-      for (const tag of tags) {
-        const { data: tagRow } = await supabaseClient.from('tags').upsert({ name: tag }).select().single();
-        if (tagRow) {
-          await supabaseClient.from('clip_tags').insert({ clip_id: clipData.id, tag_id: tagRow.id });
-        }
+    for (const tag of tags) {
+      const { data: tagRow } = await supabaseClient.from('tags').upsert({ name: tag }).select().single();
+      if (tagRow) {
+        await supabaseClient.from('clip_tags').insert({ clip_id: clipData.id, tag_id: tagRow.id });
       }
     }
 
     if (progressBar) progressBar.style.width = '100%';
-    if (statusText) statusText.textContent = `Published ${total}/${total}.`;
-    isUploading = false;
+    if (statusText) statusText.textContent = 'Published.';
     finishPublishOverlay(() => {
       window.location.href = 'dashboard.html';
     });
@@ -1859,7 +1763,7 @@ const hydrateModal = async (clipId) => {
   }
   if (tagsEl) {
     const tags = (clip.clip_tags || []).map((ct) => ct.tags?.name).filter(Boolean);
-    tagsEl.innerHTML = tags.map((tag) => `<span class="tag">#${escapeHtml(tag)}</span>`).join('');
+    tagsEl.innerHTML = tags.map((tag) => `<span class="tag">#${tag}</span>`).join('');
   }
   if (followBtn) followBtn.setAttribute('data-follow-id', clip.profiles?.id || '');
   if (followBtn) {
@@ -2219,10 +2123,10 @@ const loadAdmin = async () => {
     <div class="list-item">
       <div>
         <strong>Report ${rep.clip_id ? `Clip` : 'User'}</strong>
-        <div class="footer-note">Reason: ${escapeHtml(rep.reason || '')} - ${formatTimeAgo(rep.created_at)}</div>
+        <div class="footer-note">Reason: ${rep.reason} - ${formatTimeAgo(rep.created_at)}</div>
       </div>
       <div class="tag-row">
-        <button class="button-secondary" data-action="dismiss-report" data-report-id="${escapeHtml(rep.id || '')}">Dismiss</button>
+        <button class="button-secondary" data-action="dismiss-report" data-report-id="${rep.id}">Dismiss</button>
       </div>
     </div>
   `).join('');
