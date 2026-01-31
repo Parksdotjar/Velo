@@ -689,7 +689,8 @@ const loadExplore = async () => {
   let query = supabaseClient
     .from('clips')
     .select(fullSelect)
-    .eq('visibility', 'public');
+    .eq('visibility', 'public')
+    .order('created_at', { ascending: false });
 
   const { text, tags } = parseSearch(exploreState.search);
   if (text) {
@@ -705,6 +706,7 @@ const loadExplore = async () => {
       .from('clips')
       .select(baseSelect)
       .eq('visibility', 'public')
+      .order('created_at', { ascending: false })
       .limit(80);
     data = fallback.data || [];
   }

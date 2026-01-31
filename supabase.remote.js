@@ -1,4 +1,4 @@
-﻿
+
 const SUPABASE_URL = 'https://supabase.velogg.org';
 const SUPABASE_ANON_KEY = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc2OTU2OTQ0MCwiZXhwIjo0OTI1MjQzMDQwLCJyb2xlIjoiYW5vbiJ9.aUrVH2AfYa9FamE_1RTaTdbcznxwxopPQkJU5h4hGPo';
 
@@ -235,7 +235,8 @@ const loadExplore = async () => {
   let query = supabaseClient
     .from('clips')
     .select(fullSelect)
-    .eq('visibility', 'public');
+    .eq('visibility', 'public')
+    .order('created_at', { ascending: false });
 
   const { text, tags } = parseSearch(exploreState.search);
   if (text) {
@@ -251,6 +252,7 @@ const loadExplore = async () => {
       .from('clips')
       .select(baseSelect)
       .eq('visibility', 'public')
+      .order('created_at', { ascending: false })
       .limit(80);
     data = fallback.data || [];
   }
