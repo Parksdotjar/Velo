@@ -287,6 +287,36 @@ const formatTimeAgo = (dateString) => {
 };
 
 const randomSecret = () => Math.random().toString(36).slice(2, 10);
+const normalizeClipSlug = (value) => {
+  const base = (value || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  return base || 'clip';
+};
+const ensureUniqueClipSlug = async (value, userId) => {
+  const base = normalizeClipSlug(value);
+  if (!supabaseClient) return base;
+  const suffixBase = userId ? userId.slice(0, 6) : Math.random().toString(36).slice(2, 6);
+  const candidates = [
+    base,
+    `${base}-${suffixBase}`,
+    `${base}-${Date.now().toString(36)}`,
+    `${base}-${randomSecret()}`
+  ];
+
+  for (const candidate of candidates) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('clips')
+        .select('id')
+        .eq('clip_slug', candidate)
+        .maybeSingle();
+      if (!error && !data) return candidate;
+    } catch (err) {
+      // Ignore and try next candidate.
+    }
+  }
+
+  return `${base}-${Math.random().toString(36).slice(2, 8)}`;
+};
 const safeFileName = (name) => {
   const parts = name.split('.');
   const ext = parts.length > 1 ? `.${parts.pop().toLowerCase()}` : '';
@@ -1838,7 +1868,7 @@ const setupUpload = () => {
     if (progressBar) progressBar.style.width = '80%';
     if (statusText) statusText.textContent = 'Publishing...';
 
-    const slug = `${title}`.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const slug = await ensureUniqueClipSlug(title, session.user.id);
     const clipSecret = randomSecret();
 
     const { data: clipData, error: clipError } = await supabaseClient.from('clips').insert({
@@ -1853,7 +1883,7 @@ const setupUpload = () => {
       allow_downloads: allowDownloads,
       allow_embed: allowEmbed,
       content_warning: contentWarning,
-      clip_slug: slug || `${session.user.id}-${Date.now()}`,
+      clip_slug: slug,
       clip_secret: clipSecret
     }).select().single();
 
