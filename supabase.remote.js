@@ -57,7 +57,10 @@ const loadAccentTheme = () => {
   } catch (error) {
     stored = null;
   }
-  return applyAccentTheme(stored || DEFAULT_ACCENT, false);
+  if (!stored) {
+    return applyAccentTheme(DEFAULT_ACCENT, true);
+  }
+  return applyAccentTheme(stored, false);
 };
 const setAccentTheme = (value) => applyAccentTheme(value, true);
 
@@ -1461,14 +1464,23 @@ const createCollection = async () => {
 };
 
 const setupAccentPicker = () => {
-  const swatches = Array.from(document.querySelectorAll('[data-accent]'));
+  const swatches = Array.from(document.querySelectorAll('.accent-swatch'));
+  const customSwatch = document.querySelector('[data-accent-custom-swatch]');
   const customInput = document.querySelector('[data-accent-custom]');
   const applyBtn = document.querySelector('[data-accent-apply]');
-  if (!swatches.length && !customInput && !applyBtn) return;
+  if (!swatches.length && !customInput && !applyBtn && !customSwatch) return;
 
   const current = window.veloAccent?.load ? window.veloAccent.load() : DEFAULT_ACCENT;
   const normalizedCurrent = window.veloAccent?.normalize ? window.veloAccent.normalize(current) : current;
   if (customInput && normalizedCurrent) customInput.value = normalizedCurrent;
+
+  const setCustomSwatch = (value) => {
+    if (!customSwatch) return;
+    const normalized = window.veloAccent?.normalize ? window.veloAccent.normalize(value) : value;
+    if (!normalized) return;
+    customSwatch.style.setProperty('--swatch', normalized);
+    customSwatch.dataset.accent = normalized;
+  };
 
   const setSelected = (value) => {
     const normalized = window.veloAccent?.normalize ? window.veloAccent.normalize(value) : value;
@@ -1479,11 +1491,16 @@ const setupAccentPicker = () => {
     });
   };
 
-  if (normalizedCurrent) setSelected(normalizedCurrent);
+  if (normalizedCurrent) {
+    const hasMatch = swatches.some((btn) => btn.dataset.accent === normalizedCurrent);
+    if (!hasMatch) setCustomSwatch(normalizedCurrent);
+    setSelected(normalizedCurrent);
+  }
 
   swatches.forEach((btn) => {
     btn.addEventListener('click', () => {
       const value = btn.dataset.accent;
+      if (!value) return;
       const applied = window.veloAccent?.set ? window.veloAccent.set(value) : value;
       if (customInput && applied) customInput.value = applied;
       setSelected(applied);
@@ -1494,6 +1511,7 @@ const setupAccentPicker = () => {
     if (!customInput) return;
     const applied = window.veloAccent?.set ? window.veloAccent.set(customInput.value) : customInput.value;
     if (applied) customInput.value = applied;
+    setCustomSwatch(applied);
     setSelected(applied);
   };
 
@@ -1508,6 +1526,7 @@ const setupAccentPicker = () => {
 
 const setupSettings = async () => {
   if (!supabaseClient || page !== 'settings') return;
+  setupAccentPicker();
   const session = await fetchSession();
   if (!session) return;
 
@@ -1597,7 +1616,6 @@ const setupSettings = async () => {
     }
   });
 
-  setupAccentPicker();
 };
 
 const setupCollectionsPage = () => {

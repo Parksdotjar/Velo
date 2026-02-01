@@ -1044,13 +1044,31 @@ body.page-enter .page {
 }
 
 .accent-swatch {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
   border: 1px solid var(--border-gray);
   background: var(--swatch);
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+.accent-swatch.is-custom {
+  background: transparent;
+  border-style: dashed;
+  color: var(--text-tertiary);
+  font-size: 16px;
+}
+
+.accent-swatch.is-custom::after {
+  content: "+";
+}
+
+.accent-swatch.is-custom[data-accent]::after {
+  content: "";
 }
 
 .accent-swatch:hover {
@@ -1071,6 +1089,39 @@ body.page-enter .page {
 
 .accent-custom .input {
   max-width: 220px;
+}
+
+.nav-button[href$="upload.html"],
+.nav-button[href$="/upload"],
+.nav-button[href$="upload"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.nav-button[href$="upload.html"]:hover,
+.nav-button[href$="/upload"]:hover,
+.nav-button[href$="upload"]:hover {
+  background: var(--accent-soft);
+}
+
+.icon-button[data-action="download"],
+.button-secondary[data-clip-download],
+.button-secondary[data-modal-download] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.icon-button[data-action="download"] .icon {
+  stroke: var(--accent-contrast);
+}
+
+.button-secondary[data-clip-download]:hover,
+.button-secondary[data-modal-download]:hover,
+.icon-button[data-action="download"]:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 8px 18px var(--accent-soft);
 }
 
 .list {
