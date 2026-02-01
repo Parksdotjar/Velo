@@ -7,6 +7,9 @@
   --text-white: #FFFFFF;
   --text-secondary: rgba(255, 255, 255, 0.78);
   --text-tertiary: rgba(255, 255, 255, 0.58);
+  --accent: #cbb6ff;
+  --accent-soft: rgba(203, 182, 255, 0.24);
+  --accent-contrast: #0b0b0b;
   --radius-lg: 18px;
   --radius-md: 12px;
   --shadow-inset: inset 0 0 0 1px var(--border-gray), inset 0 12px 28px rgba(0, 0, 0, 0.6);
@@ -239,6 +242,23 @@ body.page-enter .page {
   border-color: var(--hover-gray);
 }
 
+.accent-button {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+}
+
+.accent-button .icon {
+  stroke: var(--accent-contrast);
+}
+
+.accent-button:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 10px 22px var(--accent-soft);
+}
+
 .button-secondary {
   background: transparent;
   border: 1px solid var(--hover-gray);
@@ -328,8 +348,13 @@ body.page-enter .page {
 
 
 .clip-card:hover {
-  border-color: var(--hover-gray);
+  border-color: var(--accent);
   transform: translateY(-2px);
+  box-shadow: 0 0 0 1px var(--accent) inset, 0 10px 26px rgba(0, 0, 0, 0.45);
+}
+
+.clip-card:hover .clip-thumb {
+  border-color: var(--accent);
 }
 
 .clip-thumb {
@@ -997,6 +1022,55 @@ body.page-enter .page {
 .section h2 {
   margin: 0 0 12px;
   font-size: 18px;
+}
+
+.accent-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.accent-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.accent-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.accent-swatch {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--border-gray);
+  background: var(--swatch);
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+.accent-swatch:hover {
+  border-color: var(--hover-gray);
+}
+
+.accent-swatch[aria-pressed="true"] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.accent-custom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.accent-custom .input {
+  max-width: 220px;
 }
 
 .list {

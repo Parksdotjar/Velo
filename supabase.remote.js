@@ -18,6 +18,58 @@ const isUnsupportedOrigin = () => {
 };
 const debugState = { banner: null };
 
+const DEFAULT_ACCENT = '#cbb6ff';
+const normalizeHex = (value) => {
+  if (!value) return null;
+  const cleaned = value.trim().replace('#', '');
+  if (!/^[0-9a-fA-F]{6}$/.test(cleaned)) return null;
+  return `#${cleaned.toLowerCase()}`;
+};
+const hexToRgb = (hex) => {
+  const cleaned = hex.replace('#', '');
+  const r = Number.parseInt(cleaned.slice(0, 2), 16);
+  const g = Number.parseInt(cleaned.slice(2, 4), 16);
+  const b = Number.parseInt(cleaned.slice(4, 6), 16);
+  return { r, g, b };
+};
+const applyAccentTheme = (value, persist = false) => {
+  const normalized = normalizeHex(value) || DEFAULT_ACCENT;
+  const { r, g, b } = hexToRgb(normalized);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  const contrast = luminance > 0.65 ? '#0b0b0b' : '#ffffff';
+  const root = document.documentElement;
+  root.style.setProperty('--accent', normalized);
+  root.style.setProperty('--accent-soft', `rgba(${r}, ${g}, ${b}, 0.24)`);
+  root.style.setProperty('--accent-contrast', contrast);
+  if (persist) {
+    try {
+      localStorage.setItem('velo-accent', normalized);
+    } catch (error) {
+      // Ignore storage failures (private mode, blocked storage).
+    }
+  }
+  return normalized;
+};
+const loadAccentTheme = () => {
+  let stored = null;
+  try {
+    stored = localStorage.getItem('velo-accent');
+  } catch (error) {
+    stored = null;
+  }
+  return applyAccentTheme(stored || DEFAULT_ACCENT, false);
+};
+const setAccentTheme = (value) => applyAccentTheme(value, true);
+
+window.veloAccent = {
+  set: setAccentTheme,
+  load: loadAccentTheme,
+  normalize: normalizeHex,
+  default: DEFAULT_ACCENT
+};
+
+loadAccentTheme();
+
 const setDebugStatus = (key, ok, text) => {
   const el = debugState.banner?.querySelector(`[data-debug="${key}"]`);
   if (!el) return;
@@ -1408,6 +1460,52 @@ const createCollection = async () => {
   loadCollections();
 };
 
+const setupAccentPicker = () => {
+  const swatches = Array.from(document.querySelectorAll('[data-accent]'));
+  const customInput = document.querySelector('[data-accent-custom]');
+  const applyBtn = document.querySelector('[data-accent-apply]');
+  if (!swatches.length && !customInput && !applyBtn) return;
+
+  const current = window.veloAccent?.load ? window.veloAccent.load() : DEFAULT_ACCENT;
+  const normalizedCurrent = window.veloAccent?.normalize ? window.veloAccent.normalize(current) : current;
+  if (customInput && normalizedCurrent) customInput.value = normalizedCurrent;
+
+  const setSelected = (value) => {
+    const normalized = window.veloAccent?.normalize ? window.veloAccent.normalize(value) : value;
+    swatches.forEach((btn) => {
+      const swatchValue = window.veloAccent?.normalize ? window.veloAccent.normalize(btn.dataset.accent) : btn.dataset.accent;
+      const isActive = normalized && swatchValue === normalized;
+      btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+  };
+
+  if (normalizedCurrent) setSelected(normalizedCurrent);
+
+  swatches.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const value = btn.dataset.accent;
+      const applied = window.veloAccent?.set ? window.veloAccent.set(value) : value;
+      if (customInput && applied) customInput.value = applied;
+      setSelected(applied);
+    });
+  });
+
+  const applyCustom = () => {
+    if (!customInput) return;
+    const applied = window.veloAccent?.set ? window.veloAccent.set(customInput.value) : customInput.value;
+    if (applied) customInput.value = applied;
+    setSelected(applied);
+  };
+
+  applyBtn?.addEventListener('click', applyCustom);
+  customInput?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      applyCustom();
+    }
+  });
+};
+
 const setupSettings = async () => {
   if (!supabaseClient || page !== 'settings') return;
   const session = await fetchSession();
@@ -1498,6 +1596,8 @@ const setupSettings = async () => {
       alert('Delete account requires admin privileges in Supabase.');
     }
   });
+
+  setupAccentPicker();
 };
 
 const setupCollectionsPage = () => {

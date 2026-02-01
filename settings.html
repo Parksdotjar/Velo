@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -37,6 +37,31 @@
         <div>
           <h1>Settings</h1>
           <p>Control account, privacy, and playback preferences.</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Appearance</h2>
+        <div class="accent-picker">
+          <div class="accent-header">
+            <div>
+              <strong>Accent color</strong>
+              <div class="footer-note">Used for upload actions and clip highlights.</div>
+            </div>
+          </div>
+          <div class="accent-swatches">
+            <button class="accent-swatch" type="button" data-accent="#cbb6ff" style="--swatch:#cbb6ff" aria-label="Pastel purple"></button>
+            <button class="accent-swatch" type="button" data-accent="#ffb3ba" style="--swatch:#ffb3ba" aria-label="Pastel red"></button>
+            <button class="accent-swatch" type="button" data-accent="#ffdfba" style="--swatch:#ffdfba" aria-label="Pastel orange"></button>
+            <button class="accent-swatch" type="button" data-accent="#ffffba" style="--swatch:#ffffba" aria-label="Pastel yellow"></button>
+            <button class="accent-swatch" type="button" data-accent="#baffc9" style="--swatch:#baffc9" aria-label="Pastel green"></button>
+            <button class="accent-swatch" type="button" data-accent="#bae1ff" style="--swatch:#bae1ff" aria-label="Pastel blue"></button>
+            <button class="accent-swatch" type="button" data-accent="#c7d2ff" style="--swatch:#c7d2ff" aria-label="Pastel indigo"></button>
+          </div>
+          <div class="accent-custom">
+            <input class="input" type="text" placeholder="#CBB6FF" data-accent-custom />
+            <button class="button-secondary" type="button" data-accent-apply>Apply</button>
+          </div>
         </div>
       </section>
 
