@@ -18,7 +18,7 @@ const isUnsupportedOrigin = () => {
 };
 const debugState = { banner: null };
 
-const DEFAULT_ACCENT = '#cbb6ff';
+const DEFAULT_ACCENT = '#7f3cff';
 const normalizeHex = (value) => {
   if (!value) return null;
   const cleaned = value.trim().replace('#', '');
