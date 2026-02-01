@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -33,15 +33,22 @@
 
   <main class="page">
     <div class="container">
-      <section class="hero">
+      <section class="dashboard-hero">
         <div>
-          <h1>Your Dashboard</h1>
-          <p>Manage your clips, collections, and saved content.</p>
+          <h1>Your Uploads</h1>
+          <div class="dashboard-meta">
+            <div class="dashboard-meta-icons">
+              <span class="dashboard-meta-icon"><svg class="icon"><use href="sprite.svg#icon-upload"></use></svg></span>
+              <span class="dashboard-meta-icon"><svg class="icon"><use href="sprite.svg#icon-eye"></use></svg></span>
+              <span class="dashboard-meta-icon"><svg class="icon"><use href="sprite.svg#icon-tag"></use></svg></span>
+            </div>
+            <span class="footer-note">Guide</span>
+          </div>
         </div>
-        <div class="tag-row">
+        <div class="dashboard-actions">
           <button class="button-primary" data-action="upload-new">
             <svg class="icon"><use href="sprite.svg#icon-upload"></use></svg>
-            Upload New
+            Upload File
           </button>
           <button class="button-secondary" data-action="new-collection">
             <svg class="icon"><use href="sprite.svg#icon-grid"></use></svg>
@@ -50,50 +57,106 @@
         </div>
       </section>
 
-      <section class="stat-grid">
-        <div class="stat-card">
-          <h3 data-stat-uploads>0</h3>
+      <section class="dashboard-summary panel">
+        <div class="summary-block">
+          <div class="summary-label">Current Plan</div>
+          <div class="summary-value summary-accent">Pro</div>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-block">
+          <div class="summary-label">Storage</div>
+          <div class="summary-value" data-stat-storage>0 GB</div>
+          <div class="summary-sub">10GB max per file</div>
+        </div>
+      </section>
+
+      <div class="dashboard-metrics">
+        <div class="dashboard-metric">
           <span>Uploads</span>
+          <strong data-stat-uploads>0</strong>
         </div>
-        <div class="stat-card">
-          <h3 data-stat-views>0</h3>
+        <div class="dashboard-metric">
           <span>Views</span>
+          <strong data-stat-views>0</strong>
         </div>
-        <div class="stat-card">
-          <h3 data-stat-likes>0</h3>
+        <div class="dashboard-metric">
           <span>Likes</span>
+          <strong data-stat-likes>0</strong>
         </div>
-        <div class="stat-card">
-          <h3 data-stat-saves>0</h3>
-          <span>Saved by others</span>
+        <div class="dashboard-metric">
+          <span>Saved</span>
+          <strong data-stat-saves>0</strong>
         </div>
-        <div class="stat-card">
-          <h3 data-stat-storage>0 GB</h3>
-          <span>Storage used</span>
-        </div>
-      </section>
-
-      <div class="tabs" data-dashboard-tabs>
-        <button class="tab active" data-tab="clips">Your Clips</button>
-        <button class="tab" data-tab="collections">Collections</button>
-        <button class="tab" data-tab="saved">Saved</button>
-        <button class="tab" data-tab="analytics">Analytics</button>
       </div>
 
-      <div class="tag-row" style="justify-content: space-between;">
-        <div class="tag-row">
-          <button class="button-secondary" data-action="dashboard-grid">Grid View</button>
-          <button class="button-secondary" data-action="dashboard-table">Table View</button>
+      <details class="dashboard-section" open>
+        <summary>
+          <div class="dashboard-section-title">
+            <svg class="icon"><use href="sprite.svg#icon-upload"></use></svg>
+            <span>Uploads</span>
+          </div>
+        </summary>
+        <div class="dashboard-toolbar">
+          <div class="tag-row">
+            <button class="button-secondary" data-action="dashboard-grid">Grid View</button>
+            <button class="button-secondary" data-action="dashboard-table">Table View</button>
+          </div>
+          <button class="button-secondary">Sort: Latest</button>
         </div>
-        <button class="button-secondary">Sort: Latest</button>
-      </div>
+        <div class="dashboard-panel panel dashboard-uploads">
+          <div class="dashboard-empty">
+            <div class="dashboard-empty-icon">
+              <svg class="icon"><use href="sprite.svg#icon-upload"></use></svg>
+            </div>
+            <strong>No files uploaded yet</strong>
+            <div class="footer-note">Upload your first file to get started sharing with friends.</div>
+            <button class="button-primary" data-action="upload-new">Upload File</button>
+          </div>
+          <section class="grid cols-3" data-dashboard-grid></section>
+        </div>
+      </details>
 
-      <section class="grid cols-3" data-tab-panel="clips" data-dashboard-grid></section>
-      <section class="grid cols-3" data-tab-panel="collections" data-collections-grid style="display:none;"></section>
-      <section class="grid cols-3" data-tab-panel="saved" data-saved-grid style="display:none;"></section>
-      <section class="panel" data-tab-panel="analytics" style="display:none; padding: 16px;">
-        <div class="skeleton lg"></div>
-      </section>
+      <details class="dashboard-section">
+        <summary>
+          <div class="dashboard-section-title">
+            <svg class="icon"><use href="sprite.svg#icon-grid"></use></svg>
+            <span>Collections</span>
+            <span class="dashboard-count">(0)</span>
+          </div>
+        </summary>
+        <div class="dashboard-collection-create">
+          <input class="input" placeholder="New collection name..." data-collection-name />
+          <button class="button-secondary" data-action="new-collection">Create</button>
+        </div>
+        <div class="dashboard-panel panel dashboard-collections">
+          <div class="collections-empty footer-note">No collections yet</div>
+          <section class="grid cols-3" data-collections-grid></section>
+        </div>
+      </details>
+
+      <details class="dashboard-section">
+        <summary>
+          <div class="dashboard-section-title">
+            <svg class="icon"><use href="sprite.svg#icon-bookmark"></use></svg>
+            <span>Saved</span>
+          </div>
+        </summary>
+        <div class="dashboard-panel panel">
+          <section class="grid cols-3" data-saved-grid></section>
+        </div>
+      </details>
+
+      <details class="dashboard-section">
+        <summary>
+          <div class="dashboard-section-title">
+            <svg class="icon"><use href="sprite.svg#icon-eye"></use></svg>
+            <span>Analytics</span>
+          </div>
+        </summary>
+        <section class="panel" style="padding: 16px;">
+          <div class="skeleton lg"></div>
+        </section>
+      </details>
     </div>
   </main>
 

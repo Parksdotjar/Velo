@@ -2083,13 +2083,18 @@ const createCollection = async () => {
   if (!supabaseClient) return;
   const session = await fetchSession();
   if (!session) return alert('Please log in.');
-  const title = await promptText({
-    title: 'Collection title',
-    placeholder: 'My new collection'
-  });
+  const input = document.querySelector('[data-collection-name]');
+  let title = input?.value?.trim();
+  if (!title) {
+    title = await promptText({
+      title: 'Collection title',
+      placeholder: 'My new collection'
+    });
+  }
   if (!title) return;
   await supabaseClient.from('collections').insert({ user_id: session.user.id, title, visibility: 'private' });
   showToast('Collection created');
+  if (input) input.value = '';
   loadCollections();
 };
 
@@ -2300,6 +2305,8 @@ const bootstrap = async () => {
   }
   if (page === 'dashboard') {
     await loadDashboard();
+    await loadCollections();
+    await loadSaved();
   }
   if (page === 'profile') await loadProfile();
   if (page === 'tag') await loadTagPage();
