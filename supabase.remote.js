@@ -1162,13 +1162,10 @@ const setupUpload = () => {
     if (allowEmbed) allowEmbed.checked = Boolean(profile.default_allow_embed);
   });
 
-  const setStatusForSelection = (count) => {
+  const setBulkMessage = (count, completed = 0) => {
     if (!loadedText || isUploading) return;
     if (count > 1) {
-      loadedText.textContent = 'Loading...';
-      setTimeout(() => {
-        if (!isUploading) loadedText.textContent = `${count}/${count} clips loaded`;
-      }, 200);
+      loadedText.textContent = `${completed}/${count} clips`;
     } else {
       loadedText.textContent = '';
     }
@@ -1184,19 +1181,19 @@ const setupUpload = () => {
     dropzone.classList.remove('has-preview');
     dropzone.classList.remove('is-loading');
     dropzone.classList.remove('has-bulk');
+    if (loadedText) loadedText.textContent = '';
   };
 
   const handleSelectedFiles = (files) => {
     if (!files || !files.length) {
       clearPreview();
-      setStatusForSelection(0);
       return;
     }
 
     if (files.length > 1) {
       clearPreview();
       dropzone.classList.add('has-bulk');
-      setStatusForSelection(files.length);
+      setBulkMessage(files.length, 0);
       return;
     }
 
@@ -1214,7 +1211,7 @@ const setupUpload = () => {
     previewVideo.onerror = () => {
       dropzone.classList.remove('is-loading');
     };
-    setStatusForSelection(1);
+    setBulkMessage(1, 0);
   };
 
   if (fileInput) {
@@ -1231,8 +1228,8 @@ const setupUpload = () => {
     const files = Array.from(fileInput.files || []);
     if (!files.length) return alert('Select a video file.');
 
-    if (loadedText) loadedText.textContent = '';
-    const baseTitle = uploadForm.querySelector('[name="title"]').value.trim();
+    const baseTitleInput = uploadForm.querySelector('[name="title"]').value.trim();
+    const baseTitle = baseTitleInput || 'Clip';
     const description = uploadForm.querySelector('[name="description"]').value.trim();
     const visibility = uploadForm.querySelector('[name="visibility"]:checked')?.value || 'public';
     const tagsRaw = uploadForm.querySelector('[name="tags"]').value;
@@ -1241,32 +1238,34 @@ const setupUpload = () => {
     const allowEmbed = uploadForm.querySelector('[name="allow_embed"]').checked;
     const contentWarning = uploadForm.querySelector('[name="content_warning"]').checked;
 
-    if (!baseTitle) return alert('Title is required.');
-
     isUploading = true;
     const total = files.length;
+    let completed = 0;
+    if (loadedText && total > 1) loadedText.textContent = `0/${total} clips`;
 
     for (let index = 0; index < total; index += 1) {
       const file = files[index];
       const clipTitle = total > 1 ? `${baseTitle} ${index + 1}` : baseTitle;
 
-      if (statusText) statusText.textContent = `Uploading ${index + 1}/${total}...`;
+      if (statusText) {
+        statusText.textContent = total > 1
+          ? `Uploading ${index + 1}/${total}...`
+          : 'Uploading...';
+      }
       if (progressBar) {
-        const base = 10;
-        const step = 60 * (index / total);
-        progressBar.style.width = `${base + step}%`;
+        const percent = Math.round((completed / total) * 100);
+        progressBar.style.width = `${percent}%`;
       }
 
       const fileName = `${session.user.id}/${Date.now()}-${file.name}`;
       const { error: uploadError } = await supabaseClient.storage.from('clips').upload(fileName, file);
       if (uploadError) return alert(uploadError.message);
 
-      if (progressBar) {
-        const base = 70;
-        const step = 10 * (index / total);
-        progressBar.style.width = `${base + step}%`;
+      if (statusText) {
+        statusText.textContent = total > 1
+          ? `Generating thumbnail ${index + 1}/${total}...`
+          : 'Generating thumbnail...';
       }
-      if (statusText) statusText.textContent = `Generating thumbnail ${index + 1}/${total}...`;
 
       const { blob, duration } = await createThumbnail(file);
       let thumbPath = null;
@@ -1276,12 +1275,11 @@ const setupUpload = () => {
         if (!thumbErr) thumbPath = thumbName;
       }
 
-      if (progressBar) {
-        const base = 80;
-        const step = 10 * (index / total);
-        progressBar.style.width = `${base + step}%`;
+      if (statusText) {
+        statusText.textContent = total > 1
+          ? `Publishing ${index + 1}/${total}...`
+          : 'Publishing...';
       }
-      if (statusText) statusText.textContent = `Publishing ${index + 1}/${total}...`;
 
       const slug = await ensureUniqueClipSlug(clipTitle, session.user.id);
       const clipSecret = randomSecret();
@@ -1310,10 +1308,21 @@ const setupUpload = () => {
           await supabaseClient.from('clip_tags').insert({ clip_id: clipData.id, tag_id: tagRow.id });
         }
       }
+      completed += 1;
+      if (loadedText && total > 1) loadedText.textContent = `${completed}/${total} clips`;
+      if (statusText) {
+        statusText.textContent = total > 1
+          ? `Published ${completed}/${total}.`
+          : 'Published.';
+      }
+      if (progressBar) {
+        const percent = Math.round((completed / total) * 100);
+        progressBar.style.width = `${percent}%`;
+      }
     }
 
     if (progressBar) progressBar.style.width = '100%';
-    if (statusText) statusText.textContent = `Published ${total}/${total}.`;
+    if (statusText) statusText.textContent = total > 1 ? `Published ${total}/${total}.` : 'Published.';
     isUploading = false;
     window.location.href = 'dashboard.html';
   });
