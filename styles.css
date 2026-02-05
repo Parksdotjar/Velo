@@ -464,6 +464,31 @@ body.page-enter .page {
   flex: 1;
 }
 
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.asset-card .clip-thumb {
+  height: 140px;
+}
+
+.asset-thumb {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0));
+}
+
+.type-badge {
+  background: var(--deep-gray);
+  border: 1px solid var(--border-gray);
+  color: var(--text-secondary);
+}
+
 .filter-button {
   display: inline-flex;
   align-items: center;
