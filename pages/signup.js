@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import Layout from '../components/Layout';
-import { supabase } from '../lib/supabaseClient';
+import Layout from '../layout';
+import { supabase } from '../supabaseClient';
 
 export default function Signup() {
   const [email, setEmail] = useState('');

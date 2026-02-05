@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import Layout from '../components/Layout';
-import { supabase } from '../lib/supabaseClient';
-import useDebounce from '../lib/useDebounce';
-import { formatDate, normalizeAssetType } from '../lib/utils';
-import { useToast } from '../components/ToastProvider';
+import Layout from '../layout';
+import { supabase } from '../supabaseClient';
+import useDebounce from '../useDebounce';
+import { formatDate, normalizeAssetType } from '../utils';
+import { useToast } from '../toastProvider';
 
 const PAGE_SIZE = 24;
 const TYPE_OPTIONS = ['All', 'Background', 'Player PNG'];

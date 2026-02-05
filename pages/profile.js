@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import Layout from '../components/Layout';
-import { supabase } from '../lib/supabaseClient';
+import Layout from '../layout';
+import { supabase } from '../supabaseClient';
 
 export default function Profile() {
   const [session, setSession] = useState(null);

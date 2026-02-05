@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import Layout from '../components/Layout';
-import { supabase } from '../lib/supabaseClient';
-import { buildAssetPath, normalizeAssetType, parseTags } from '../lib/utils';
-import { useToast } from '../components/ToastProvider';
+import Layout from '../layout';
+import { supabase } from '../supabaseClient';
+import { buildAssetPath, normalizeAssetType, parseTags } from '../utils';
+import { useToast } from '../toastProvider';
 
 const EDITING_TYPES = ['Preset', 'Sound Effect', 'Background', 'PNG'];
 const THUMBNAIL_TYPES = ['Background', 'Player PNG'];

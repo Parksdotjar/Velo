@@ -1,5 +1,5 @@
 import { Readable } from 'stream';
-import { supabaseAdmin } from '../../../lib/supabaseAdmin';
+import { supabaseAdmin } from '../../../supabaseAdmin';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {

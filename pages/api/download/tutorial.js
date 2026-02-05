@@ -1,5 +1,5 @@
 import { Readable } from 'stream';
-import { supabaseAdmin } from '../../../lib/supabaseAdmin';
+import { supabaseAdmin } from '../../../supabaseAdmin';
 
 const sanitize = (value) =>
   (value || 'tutorial')

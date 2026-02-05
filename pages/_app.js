@@ -1,5 +1,5 @@
 import '../styles.css';
-import { ToastProvider } from '../components/ToastProvider';
+import { ToastProvider } from '../toastProvider';
 
 export default function App({ Component, pageProps }) {
   return (
