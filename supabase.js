@@ -1,6 +1,6 @@
-﻿
-const SUPABASE_URL = 'https://juagusbfswxcwenzegfg.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1YWd1c2Jmc3d4Y3dlbnplZ2ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMzk5NzksImV4cCI6MjA4NDYxNTk3OX0.fe76LO6mVP9Okqj9JNhr2EQF7mx-o6F95QrEIOz8yaw';
+
+const SUPABASE_URL = 'https://supabase.velogg.org';
+const SUPABASE_ANON_KEY = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc2OTU2OTQ0MCwiZXhwIjo0OTI1MjQzMDQwLCJyb2xlIjoiYW5vbiJ9.aUrVH2AfYa9FamE_1RTaTdbcznxwxopPQkJU5h4hGPo';
 
 const supabaseClient = window.supabase?.createClient ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
@@ -17,6 +17,61 @@ const isUnsupportedOrigin = () => {
   return false;
 };
 const debugState = { banner: null };
+
+const DEFAULT_ACCENT = '#7f3cff';
+const normalizeHex = (value) => {
+  if (!value) return null;
+  const cleaned = value.trim().replace('#', '');
+  if (!/^[0-9a-fA-F]{6}$/.test(cleaned)) return null;
+  return `#${cleaned.toLowerCase()}`;
+};
+const hexToRgb = (hex) => {
+  const cleaned = hex.replace('#', '');
+  const r = Number.parseInt(cleaned.slice(0, 2), 16);
+  const g = Number.parseInt(cleaned.slice(2, 4), 16);
+  const b = Number.parseInt(cleaned.slice(4, 6), 16);
+  return { r, g, b };
+};
+const applyAccentTheme = (value, persist = false) => {
+  const normalized = normalizeHex(value) || DEFAULT_ACCENT;
+  const { r, g, b } = hexToRgb(normalized);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  const contrast = luminance > 0.65 ? '#0b0b0b' : '#ffffff';
+  const root = document.documentElement;
+  root.style.setProperty('--accent', normalized);
+  root.style.setProperty('--accent-soft', `rgba(${r}, ${g}, ${b}, 0.24)`);
+  root.style.setProperty('--accent-contrast', contrast);
+  if (persist) {
+    try {
+      localStorage.setItem('velo-accent', normalized);
+    } catch (error) {
+      // Ignore storage failures (private mode, blocked storage).
+    }
+  }
+  return normalized;
+};
+const loadAccentTheme = () => {
+  let stored = null;
+  try {
+    stored = localStorage.getItem('velo-accent');
+  } catch (error) {
+    stored = null;
+  }
+  if (!stored) {
+    return applyAccentTheme(DEFAULT_ACCENT, true);
+  }
+  return applyAccentTheme(stored, false);
+};
+const setAccentTheme = (value) => applyAccentTheme(value, true);
+
+window.veloAccent = {
+  set: setAccentTheme,
+  load: loadAccentTheme,
+  normalize: normalizeHex,
+  default: DEFAULT_ACCENT
+};
+
+loadAccentTheme();
 
 const setDebugStatus = (key, ok, text) => {
   const el = debugState.banner?.querySelector(`[data-debug="${key}"]`);
@@ -232,6 +287,36 @@ const formatTimeAgo = (dateString) => {
 };
 
 const randomSecret = () => Math.random().toString(36).slice(2, 10);
+const normalizeClipSlug = (value) => {
+  const base = (value || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  return base || 'clip';
+};
+const ensureUniqueClipSlug = async (value, userId) => {
+  const base = normalizeClipSlug(value);
+  if (!supabaseClient) return base;
+  const suffixBase = userId ? userId.slice(0, 6) : Math.random().toString(36).slice(2, 6);
+  const candidates = [
+    base,
+    `${base}-${suffixBase}`,
+    `${base}-${Date.now().toString(36)}`,
+    `${base}-${randomSecret()}`
+  ];
+
+  for (const candidate of candidates) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('clips')
+        .select('id')
+        .eq('clip_slug', candidate)
+        .maybeSingle();
+      if (!error && !data) return candidate;
+    } catch (err) {
+      // Ignore and try next candidate.
+    }
+  }
+
+  return `${base}-${Math.random().toString(36).slice(2, 8)}`;
+};
 const safeFileName = (name) => {
   const parts = name.split('.');
   const ext = parts.length > 1 ? `.${parts.pop().toLowerCase()}` : '';
@@ -664,11 +749,17 @@ let activeCommentsClipId = null;
 let modalWarningAcknowledged = false;
 let modalWarningClipId = null;
 
+const EXPLORE_PAGE_SIZE = 124;
+const EXPLORE_PAGE_WINDOW = 10;
+
 let exploreState = {
   sort: 'new',
   duration: null,
   tag: null,
-  search: ''
+  search: '',
+  page: 1,
+  totalCount: 0,
+  totalPages: 1
 };
 
 const parseSearch = (value) => {
@@ -676,6 +767,72 @@ const parseSearch = (value) => {
   const tags = parts.filter((p) => p.startsWith('#')).map((p) => p.replace('#', ''));
   const text = parts.filter((p) => !p.startsWith('#')).join(' ');
   return { text, tags };
+};
+
+const getExploreOrder = () => {
+  if (exploreState.sort === 'views') return ['views_count', 'created_at'];
+  if (exploreState.sort === 'likes') return ['likes_count', 'created_at'];
+  if (exploreState.sort === 'trending') return ['views_count', 'likes_count'];
+  return ['created_at'];
+};
+
+const applyExploreDuration = (query) => {
+  if (!exploreState.duration) return query;
+  const [min, max] = exploreState.duration.split('-');
+  if (max === '+') {
+    return query.or(`duration_seconds.is.null,duration_seconds.gte.${Number(min)}`);
+  }
+  return query.or(`duration_seconds.is.null,and(duration_seconds.gte.${Number(min)},duration_seconds.lt.${Number(max)})`);
+};
+
+const updateExploreStatus = (shown) => {
+  const note = document.querySelector('[data-explore-status]');
+  if (!note) return;
+  const total = exploreState.totalCount || 0;
+  if (!total) {
+    note.textContent = 'No public clips yet.';
+    return;
+  }
+  if (!shown) {
+    note.textContent = 'No clips match your filters.';
+    return;
+  }
+  const start = (exploreState.page - 1) * EXPLORE_PAGE_SIZE + 1;
+  const end = Math.min(total, start + shown - 1);
+  note.textContent = `Showing ${start}-${end} of ${total} public clips - Page ${exploreState.page} of ${exploreState.totalPages}`;
+};
+
+const renderExplorePagination = () => {
+  const pagination = document.querySelector('[data-pagination]');
+  if (!pagination) return;
+  const total = exploreState.totalCount || 0;
+  const totalPages = exploreState.totalPages || 1;
+  if (total <= EXPLORE_PAGE_SIZE) {
+    pagination.style.display = 'none';
+    return;
+  }
+  pagination.style.display = 'flex';
+  const prevBtn = pagination.querySelector('[data-page-prev]');
+  const nextBtn = pagination.querySelector('[data-page-next]');
+  const buttons = pagination.querySelector('[data-page-buttons]');
+  if (!buttons) return;
+
+  const currentPage = exploreState.page;
+  if (prevBtn) prevBtn.disabled = currentPage <= 1;
+  if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+
+  const windowStart = Math.max(1, currentPage - EXPLORE_PAGE_WINDOW + 1);
+  const windowEnd = Math.min(totalPages, windowStart + EXPLORE_PAGE_WINDOW - 1);
+  const pageButtons = [];
+  for (let page = windowStart; page <= windowEnd; page += 1) {
+    const isActive = page === currentPage;
+    pageButtons.push(`
+      <button class="button-secondary page-button${isActive ? ' active' : ''}" data-page="${page}"${isActive ? ' aria-current="page"' : ''}>
+        ${page}
+      </button>
+    `);
+  }
+  buttons.innerHTML = pageButtons.join('');
 };
 
 const loadExplore = async () => {
@@ -688,7 +845,7 @@ const loadExplore = async () => {
 
   let query = supabaseClient
     .from('clips')
-    .select(fullSelect)
+    .select(fullSelect, { count: 'exact' })
     .eq('visibility', 'public');
 
   const { text, tags } = parseSearch(exploreState.search);
@@ -696,17 +853,43 @@ const loadExplore = async () => {
     query = query.ilike('title', `%${text}%`);
   }
 
-  let { data, error } = await query.limit(80);
+  query = applyExploreDuration(query);
+  const [orderPrimary, orderSecondary] = getExploreOrder();
+  query = query.order(orderPrimary, { ascending: false });
+  if (orderSecondary) {
+    query = query.order(orderSecondary, { ascending: false });
+  }
+
+  const from = (exploreState.page - 1) * EXPLORE_PAGE_SIZE;
+  const to = from + EXPLORE_PAGE_SIZE - 1;
+  let { data, error, count } = await query.range(from, to);
   if (error) {
     console.error(error);
     showToast(`Explore error: ${error.message}`);
     // Fallback: fetch without joins if RLS blocks related tables
-    const fallback = await supabaseClient
+    let fallback = supabaseClient
       .from('clips')
-      .select(baseSelect)
-      .eq('visibility', 'public')
-      .limit(80);
-    data = fallback.data || [];
+      .select(baseSelect, { count: 'exact' })
+      .eq('visibility', 'public');
+    if (text) {
+      fallback = fallback.ilike('title', `%${text}%`);
+    }
+    fallback = applyExploreDuration(fallback);
+    const [fallbackPrimary, fallbackSecondary] = getExploreOrder();
+    fallback = fallback.order(fallbackPrimary, { ascending: false });
+    if (fallbackSecondary) {
+      fallback = fallback.order(fallbackSecondary, { ascending: false });
+    }
+    const fallbackResult = await fallback.range(from, to);
+    data = fallbackResult.data || [];
+    count = fallbackResult.count;
+  }
+
+  exploreState.totalCount = count || 0;
+  exploreState.totalPages = Math.max(1, Math.ceil((count || 0) / EXPLORE_PAGE_SIZE));
+  if (exploreState.page > exploreState.totalPages) {
+    exploreState.page = exploreState.totalPages;
+    return loadExplore();
   }
 
   let filtered = data || [];
@@ -750,6 +933,8 @@ const loadExplore = async () => {
   filtered.forEach((clip) => clipCache.set(clip.id, clip));
 
   grid.innerHTML = filtered.map(buildClipCard).join('');
+  updateExploreStatus(filtered.length);
+  renderExplorePagination();
   await hydrateUserReactions(filtered.map((clip) => clip.id));
   bindHoverPreviews(grid);
   if (window.veloStagger) {
@@ -770,6 +955,7 @@ const setupExploreFilters = () => {
       clearTimeout(searchTimer);
       searchTimer = setTimeout(() => {
         exploreState.search = searchInput.value.trim();
+        exploreState.page = 1;
         loadExplore();
       }, 250);
     });
@@ -781,18 +967,21 @@ const setupExploreFilters = () => {
         document.querySelectorAll('[data-sort]').forEach((c) => c.classList.remove('active'));
         chip.classList.add('active');
         exploreState.sort = chip.dataset.sort;
+        exploreState.page = 1;
       }
 
       if (chip.dataset.duration) {
         document.querySelectorAll('[data-duration]').forEach((c) => c.classList.remove('active'));
         chip.classList.add('active');
         exploreState.duration = chip.dataset.duration === '60+' ? '60-+' : chip.dataset.duration;
+        exploreState.page = 1;
       }
 
       if (chip.dataset.tag) {
         document.querySelectorAll('[data-tag]').forEach((c) => c.classList.remove('active'));
         chip.classList.add('active');
         exploreState.tag = chip.dataset.tag;
+        exploreState.page = 1;
       }
 
       loadExplore();
@@ -810,7 +999,7 @@ const setupExploreFilters = () => {
 
   if (clearBtn) {
     clearBtn.addEventListener('click', () => {
-      exploreState = { sort: 'new', duration: null, tag: null, search: '' };
+      exploreState = { sort: 'new', duration: null, tag: null, search: '', page: 1, totalCount: 0, totalPages: 1 };
       if (searchInput) searchInput.value = '';
       document.querySelectorAll('[data-sort]').forEach((chip) => chip.classList.remove('active'));
       document.querySelector('[data-sort="new"]')?.classList.add('active');
@@ -820,6 +1009,42 @@ const setupExploreFilters = () => {
       loadExplore();
     });
   }
+};
+
+const setupExplorePagination = () => {
+  const pagination = document.querySelector('[data-pagination]');
+  if (!pagination) return;
+  const prevBtn = pagination.querySelector('[data-page-prev]');
+  const nextBtn = pagination.querySelector('[data-page-next]');
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      if (exploreState.page <= 1) return;
+      exploreState.page -= 1;
+      loadExplore();
+      scrollToTop();
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      if (exploreState.page >= exploreState.totalPages) return;
+      exploreState.page += 1;
+      loadExplore();
+      scrollToTop();
+    });
+  }
+
+  pagination.addEventListener('click', (event) => {
+    const pageBtn = event.target.closest('[data-page]');
+    if (!pageBtn) return;
+    const page = Number(pageBtn.getAttribute('data-page'));
+    if (!Number.isFinite(page) || page === exploreState.page) return;
+    exploreState.page = page;
+    loadExplore();
+    scrollToTop();
+  });
 };
 const loadDashboard = async () => {
   if (!supabaseClient) return;
@@ -1522,6 +1747,7 @@ const setupUpload = () => {
   const statusText = document.querySelector('[data-upload-status]');
   const dropzone = document.querySelector('.dropzone');
   const previewVideo = document.querySelector('[data-upload-preview]');
+  const previewMessage = document.querySelector('[data-upload-loaded]');
   const guidelinesBtn = document.querySelector('[data-action="guidelines"]');
   const guidelinesPanel = document.querySelector('[data-guidelines]');
 
@@ -1546,25 +1772,56 @@ const setupUpload = () => {
     if (allowEmbed) allowEmbed.checked = Boolean(profile.default_allow_embed);
   });
 
-  const handleSelectedFile = (file) => {
-    if (!file || !dropzone || !previewVideo) return;
+  const clearPreview = () => {
+    if (!previewVideo || !dropzone) return;
     const previousUrl = previewVideo.dataset.previewUrl;
     if (previousUrl) URL.revokeObjectURL(previousUrl);
+    previewVideo.removeAttribute('src');
+    previewVideo.removeAttribute('data-preview-url');
+    previewVideo.load();
     dropzone.classList.remove('has-preview');
+    dropzone.classList.remove('has-bulk');
+    if (previewMessage) previewMessage.textContent = '';
+  };
+
+  const showSinglePreview = (file) => {
+    if (!file || !dropzone || !previewVideo) return;
+    clearPreview();
+    dropzone.classList.add('is-loading');
     const url = URL.createObjectURL(file);
     previewVideo.dataset.previewUrl = url;
     previewVideo.src = url;
     previewVideo.onloadeddata = () => {
+      dropzone.classList.remove('is-loading');
       dropzone.classList.add('has-preview');
     };
     previewVideo.onerror = () => {
-      dropzone.classList.remove('has-preview');
+      dropzone.classList.remove('is-loading');
     };
+  };
+
+  const showBulkPreview = (count) => {
+    if (!dropzone) return;
+    clearPreview();
+    dropzone.classList.add('has-bulk');
+    if (previewMessage) previewMessage.textContent = `0/${count} clips`;
+  };
+
+  const handleSelectedFiles = (files) => {
+    if (!files || files.length === 0) {
+      clearPreview();
+      return;
+    }
+    if (files.length > 1) {
+      showBulkPreview(files.length);
+      return;
+    }
+    showSinglePreview(files[0]);
   };
 
   if (fileInput) {
     fileInput.addEventListener('change', () => {
-      handleSelectedFile(fileInput.files[0]);
+      handleSelectedFiles(Array.from(fileInput.files || []));
     });
   }
 
@@ -1590,12 +1847,12 @@ const setupUpload = () => {
     });
 
     dropzone.addEventListener('drop', (event) => {
-      const file = event.dataTransfer?.files?.[0];
-      if (!file) return;
+      const files = Array.from(event.dataTransfer?.files || []);
+      if (!files.length) return;
       const transfer = new DataTransfer();
-      transfer.items.add(file);
+      files.forEach((file) => transfer.items.add(file));
       fileInput.files = transfer.files;
-      handleSelectedFile(file);
+      handleSelectedFiles(files);
     });
   }
 
@@ -1606,11 +1863,12 @@ const setupUpload = () => {
     const profile = await ensureProfile(session);
     if (!profile) return alert('Profile setup failed. Please try again.');
 
-    const file = fileInput.files[0];
-    if (!file) return alert('Select a video file.');
+    const files = Array.from(fileInput.files || []);
+    if (!files.length) return alert('Select a video file.');
 
     startPublishOverlay();
-    const title = uploadForm.querySelector('[name="title"]').value.trim();
+    const baseTitleInput = uploadForm.querySelector('[name="title"]').value.trim();
+    const baseTitle = baseTitleInput || 'Clip';
     const description = uploadForm.querySelector('[name="description"]').value.trim();
     const visibility = uploadForm.querySelector('[name="visibility"]:checked')?.value || 'public';
     const tagsRaw = uploadForm.querySelector('[name="tags"]').value;
@@ -1619,63 +1877,94 @@ const setupUpload = () => {
     const allowEmbed = uploadForm.querySelector('[name="allow_embed"]').checked;
     const contentWarning = uploadForm.querySelector('[name="content_warning"]').checked;
 
-    if (statusText) statusText.textContent = 'Uploading...';
-    if (progressBar) progressBar.style.width = '20%';
+    const total = files.length;
+    let completed = 0;
+    if (total > 1 && previewMessage) previewMessage.textContent = `0/${total} clips`;
 
-    const fileName = `${session.user.id}/${Date.now()}-${safeFileName(file.name)}`;
-    const { error: uploadError } = await supabaseClient.storage.from('clips').upload(fileName, file);
-    if (uploadError) {
-      hidePublishOverlay();
-      return alert(uploadError.message);
-    }
+    for (let index = 0; index < total; index += 1) {
+      const file = files[index];
+      const clipTitle = total > 1 ? `${baseTitle} ${index + 1}` : baseTitle;
+      if (statusText) {
+        statusText.textContent = total > 1
+          ? `Uploading ${index + 1}/${total}...`
+          : 'Uploading...';
+      }
+      if (progressBar) {
+        const percent = Math.round((completed / total) * 100);
+        progressBar.style.width = `${percent}%`;
+      }
 
-    if (progressBar) progressBar.style.width = '60%';
-    if (statusText) statusText.textContent = 'Generating thumbnail...';
+      const fileName = `${session.user.id}/${Date.now()}-${safeFileName(file.name)}`;
+      const { error: uploadError } = await supabaseClient.storage.from('clips').upload(fileName, file);
+      if (uploadError) {
+        hidePublishOverlay();
+        return alert(uploadError.message);
+      }
 
-    const { blob, duration } = await createThumbnail(file);
-    let thumbPath = null;
-    if (blob) {
-      const thumbName = `${session.user.id}/${Date.now()}-${safeFileName(file.name)}.jpg`;
-      const { error: thumbErr } = await supabaseClient.storage.from('thumbs').upload(thumbName, blob);
-      if (!thumbErr) thumbPath = thumbName;
-    }
+      if (statusText) {
+        statusText.textContent = total > 1
+          ? `Generating thumbnail ${index + 1}/${total}...`
+          : 'Generating thumbnail...';
+      }
 
-    if (progressBar) progressBar.style.width = '80%';
-    if (statusText) statusText.textContent = 'Publishing...';
+      const { blob, duration } = await createThumbnail(file);
+      let thumbPath = null;
+      if (blob) {
+        const thumbName = `${session.user.id}/${Date.now()}-${safeFileName(file.name)}.jpg`;
+        const { error: thumbErr } = await supabaseClient.storage.from('thumbs').upload(thumbName, blob);
+        if (!thumbErr) thumbPath = thumbName;
+      }
 
-    const slug = `${title}`.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    const clipSecret = randomSecret();
+      if (statusText) {
+        statusText.textContent = total > 1
+          ? `Publishing ${index + 1}/${total}...`
+          : 'Publishing...';
+      }
 
-    const { data: clipData, error: clipError } = await supabaseClient.from('clips').insert({
-      user_id: session.user.id,
-      title,
-      description,
-      visibility,
-      video_path: fileName,
-      thumb_path: thumbPath,
-      duration: `${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, '0')}`,
-      duration_seconds: Math.floor(duration),
-      allow_downloads: allowDownloads,
-      allow_embed: allowEmbed,
-      content_warning: contentWarning,
-      clip_slug: slug || `${session.user.id}-${Date.now()}`,
-      clip_secret: clipSecret
-    }).select().single();
+      const slug = await ensureUniqueClipSlug(clipTitle, session.user.id);
+      const clipSecret = randomSecret();
 
-    if (clipError) {
-      hidePublishOverlay();
-      return alert(clipError.message);
-    }
+      const { data: clipData, error: clipError } = await supabaseClient.from('clips').insert({
+        user_id: session.user.id,
+        title: clipTitle,
+        description,
+        visibility,
+        video_path: fileName,
+        thumb_path: thumbPath,
+        duration: `${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, '0')}`,
+        duration_seconds: Math.floor(duration),
+        allow_downloads: allowDownloads,
+        allow_embed: allowEmbed,
+        content_warning: contentWarning,
+        clip_slug: slug,
+        clip_secret: clipSecret
+      }).select().single();
 
-    for (const tag of tags) {
-      const { data: tagRow } = await supabaseClient.from('tags').upsert({ name: tag }).select().single();
-      if (tagRow) {
-        await supabaseClient.from('clip_tags').insert({ clip_id: clipData.id, tag_id: tagRow.id });
+      if (clipError) {
+        hidePublishOverlay();
+        return alert(clipError.message);
+      }
+
+      for (const tag of tags) {
+        const { data: tagRow } = await supabaseClient.from('tags').upsert({ name: tag }).select().single();
+        if (tagRow) {
+          await supabaseClient.from('clip_tags').insert({ clip_id: clipData.id, tag_id: tagRow.id });
+        }
+      }
+
+      completed += 1;
+      if (previewMessage && total > 1) previewMessage.textContent = `${completed}/${total} clips`;
+      if (statusText) {
+        statusText.textContent = total > 1
+          ? `Published ${completed}/${total}.`
+          : 'Published.';
+      }
+      if (progressBar) {
+        const percent = Math.round((completed / total) * 100);
+        progressBar.style.width = `${percent}%`;
       }
     }
 
-    if (progressBar) progressBar.style.width = '100%';
-    if (statusText) statusText.textContent = 'Published.';
     finishPublishOverlay(() => {
       window.location.href = 'dashboard.html';
     });
@@ -1943,18 +2232,85 @@ const createCollection = async () => {
   if (!supabaseClient) return;
   const session = await fetchSession();
   if (!session) return alert('Please log in.');
-  const title = await promptText({
-    title: 'Collection title',
-    placeholder: 'My new collection'
-  });
+  const input = document.querySelector('[data-collection-name]');
+  let title = input?.value?.trim();
+  if (!title) {
+    title = await promptText({
+      title: 'Collection title',
+      placeholder: 'My new collection'
+    });
+  }
   if (!title) return;
   await supabaseClient.from('collections').insert({ user_id: session.user.id, title, visibility: 'private' });
   showToast('Collection created');
+  if (input) input.value = '';
   loadCollections();
+};
+
+const setupAccentPicker = () => {
+  const swatches = Array.from(document.querySelectorAll('.accent-swatch'));
+  const customSwatch = document.querySelector('[data-accent-custom-swatch]');
+  const customInput = document.querySelector('[data-accent-custom]');
+  const applyBtn = document.querySelector('[data-accent-apply]');
+  if (!swatches.length && !customInput && !applyBtn && !customSwatch) return;
+
+  const current = window.veloAccent?.load ? window.veloAccent.load() : DEFAULT_ACCENT;
+  const normalizedCurrent = window.veloAccent?.normalize ? window.veloAccent.normalize(current) : current;
+  if (customInput && normalizedCurrent) customInput.value = normalizedCurrent;
+
+  const setCustomSwatch = (value) => {
+    if (!customSwatch) return;
+    const normalized = window.veloAccent?.normalize ? window.veloAccent.normalize(value) : value;
+    if (!normalized) return;
+    customSwatch.style.setProperty('--swatch', normalized);
+    customSwatch.dataset.accent = normalized;
+  };
+
+  const setSelected = (value) => {
+    const normalized = window.veloAccent?.normalize ? window.veloAccent.normalize(value) : value;
+    swatches.forEach((btn) => {
+      const swatchValue = window.veloAccent?.normalize ? window.veloAccent.normalize(btn.dataset.accent) : btn.dataset.accent;
+      const isActive = normalized && swatchValue === normalized;
+      btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+  };
+
+  if (normalizedCurrent) {
+    const hasMatch = swatches.some((btn) => btn.dataset.accent === normalizedCurrent);
+    if (!hasMatch) setCustomSwatch(normalizedCurrent);
+    setSelected(normalizedCurrent);
+  }
+
+  swatches.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const value = btn.dataset.accent;
+      if (!value) return;
+      const applied = window.veloAccent?.set ? window.veloAccent.set(value) : value;
+      if (customInput && applied) customInput.value = applied;
+      setSelected(applied);
+    });
+  });
+
+  const applyCustom = () => {
+    if (!customInput) return;
+    const applied = window.veloAccent?.set ? window.veloAccent.set(customInput.value) : customInput.value;
+    if (applied) customInput.value = applied;
+    setCustomSwatch(applied);
+    setSelected(applied);
+  };
+
+  applyBtn?.addEventListener('click', applyCustom);
+  customInput?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      applyCustom();
+    }
+  });
 };
 
 const setupSettings = async () => {
   if (!supabaseClient || page !== 'settings') return;
+  setupAccentPicker();
   const session = await fetchSession();
   if (!session) return;
 
@@ -2097,6 +2453,7 @@ const setupSettings = async () => {
       window.location.href = 'index.html';
     }
   });
+
 };
 
 const setupCollectionsPage = () => {
@@ -2155,10 +2512,13 @@ const bootstrap = async () => {
 
   if (page === 'explore') {
     setupExploreFilters();
+    setupExplorePagination();
     await loadExplore();
   }
   if (page === 'dashboard') {
     await loadDashboard();
+    await loadCollections();
+    await loadSaved();
   }
   if (page === 'profile') await loadProfile();
   if (page === 'tag') await loadTagPage();

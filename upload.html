@@ -38,7 +38,10 @@
           <h1>Upload</h1>
           <p>Drag in your clip, set visibility, and publish to VELO.</p>
         </div>
-        <button class="button-secondary" data-action="guidelines">Guidelines</button>
+        <div class="button-row" style="display:flex; gap: 10px; flex-wrap: wrap;">
+          <button class="button-secondary" data-action="guidelines">Guidelines</button>
+          <button class="button-secondary" data-action="bulk-info">Bulk Upload Info</button>
+        </div>
       </section>
 
       <section class="panel upload-guidelines" data-guidelines style="display:none; padding: 14px;">
@@ -50,17 +53,27 @@
         </ul>
       </section>
 
+      <section class="panel upload-guidelines" data-bulk-info style="display:none; padding: 14px;">
+        <strong>Bulk upload</strong>
+        <ul class="guideline-list">
+          <li>Drag and drop multiple clips at once.</li>
+          <li>Previews are skipped to reduce load — you'll see "Loading..." then "X/X clips loaded".</li>
+          <li>Titles are auto-suffixed: "dog 1", "dog 2", and so on.</li>
+        </ul>
+      </section>
+
       <section class="split">
         <div class="dropzone">
           <div class="dropzone-content">
             <svg class="icon" style="width: 32px; height: 32px;"><use href="sprite.svg#icon-upload"></use></svg>
             <strong>Drop your video here</strong>
             <span class="footer-note">MP4, MOV, up to 2GB</span>
-            <input type="file" data-upload-file accept="video/*" style="display:none;" />
-            <button class="button-secondary" type="button" onclick="document.querySelector('[data-upload-file]').click()">Select File</button>
+            <input type="file" data-upload-file accept="video/*" multiple style="display:none;" />
+            <button class="button-secondary" type="button" onclick="document.querySelector('[data-upload-file]').click()">Select Files</button>
           </div>
           <div class="upload-preview" data-upload-preview-container>
             <video data-upload-preview controls muted playsinline></video>
+            <div class="upload-preview-message" data-upload-loaded></div>
           </div>
         </div>
 
@@ -98,7 +111,7 @@
               <span>Content warning</span>
               <input type="checkbox" name="content_warning" />
             </div>
-            <button class="button-primary" type="submit">
+            <button class="button-primary accent-button" type="submit">
               <svg class="icon"><use href="sprite.svg#icon-upload"></use></svg>
               Publish
             </button>
@@ -114,7 +127,7 @@
     </div>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js?v=20260126-02" defer></script>  <script src="supabase.js?v=20260126-02" defer></script>  <script src="app.js?v=20260126-02" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js?v=20260130-02" defer></script>  <script src="supabase.js?v=20260130-02" defer></script>  <script src="app.js?v=20260128-03" defer></script>
 </body>
 </html>
 

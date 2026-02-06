@@ -1,4 +1,4 @@
-﻿const modal = document.querySelector('[data-modal]');
+const modal = document.querySelector('[data-modal]');
 const modalTriggers = document.querySelectorAll('[data-open-modal]');
 const modalClose = document.querySelector('[data-close-modal]');
 const authToggle = document.querySelector('[data-toggle-auth]');
@@ -8,6 +8,15 @@ const mainRoot = document.querySelector('main');
 const groupedItems = [];
 let flatItems = [];
 let isTransitioning = false;
+const stripHtmlExtension = () => {
+  const { pathname, search, hash } = window.location;
+  if (!pathname.endsWith('.html')) return;
+  const cleaned = pathname.replace(/\/index\.html$/i, '/').replace(/\.html$/i, '');
+  const safePath = cleaned === '' ? '/' : cleaned;
+  window.history.replaceState(null, '', `${safePath}${search}${hash}`);
+};
+
+stripHtmlExtension();
 const authBlocker = (() => {
   const blocker = document.createElement('div');
   blocker.className = 'auth-blocker';
@@ -308,8 +317,16 @@ document.addEventListener('click', (event) => {
   const link = event.target.closest('a[href]');
   if (!link) return;
   const href = link.getAttribute('href') || '';
-  const protectedRoutes = ['upload.html', 'dashboard.html', 'settings.html'];
-  if (protectedRoutes.includes(href) && isAuthReady() && !isLoggedIn()) {
+  let pathname = '';
+  try {
+    pathname = new URL(href, window.location.href).pathname;
+  } catch (error) {
+    pathname = href;
+  }
+  const routeName = pathname.split('/').filter(Boolean).pop() || '';
+  const normalized = routeName.replace(/\.html$/i, '');
+  const protectedRoutes = ['upload', 'dashboard', 'settings'];
+  if (protectedRoutes.includes(normalized) && isAuthReady() && !isLoggedIn()) {
     event.preventDefault();
     showAuthBlocker();
   }

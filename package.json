@@ -1,0 +1,30 @@
+{
+  "name": "velo",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Parksdotjar/Velo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Parksdotjar/Velo/issues"
+  },
+  "homepage": "https://github.com/Parksdotjar/Velo#readme",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.95.0",
+    "next": "^16.1.6",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  }
+}

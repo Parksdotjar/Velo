@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VELO | Not Found</title>
+  <meta name="color-scheme" content="dark" />
+  <style>html, body { background: #000000; color: #ffffff; }</style>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-auth="logged-out">
+  <main class="page">
+    <div class="container">
+      <section class="panel" style="padding: 18px;">
+        <h1>Page not found</h1>
+        <p class="footer-note">If a matching HTML page exists, we will redirect you.</p>
+        <a class="button-secondary" href="index.html">Back to Explore</a>
+      </section>
+    </div>
+  </main>
+  <script>
+    (() => {
+      const { pathname, search, hash } = window.location;
+      if (pathname === '/' || pathname.endsWith('.html')) return;
+      if (pathname.startsWith('/v/')) return;
+      if (/\.[a-z0-9]+$/i.test(pathname)) return;
+      const trimmed = pathname.replace(/\/$/, '');
+      if (!trimmed) return;
+      const target = `${trimmed}.html`;
+      window.location.replace(`${target}${search}${hash}`);
+    })();
+  </script>
+</body>
+</html>
