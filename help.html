@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Lost Signal Store - Dashboard</title>
+  <title>Lost Signal Store - Help</title>
   <link rel="stylesheet" href="store.css?v=20260129-02" />
 </head>
 <body>
@@ -15,8 +15,8 @@
           <a class="pill-link" href="index.html">Explore</a>
           <a class="pill-link" href="store.html">Store</a>
           <a class="pill-link" href="https://www.patreon.com/15484552/join" target="_blank" rel="noreferrer">Membership</a>
-          <a class="pill-link active" href="dashboard.html">Dashboard</a>
-          <a class="pill-link" href="help.html">Help</a>
+          <a class="pill-link" href="dashboard.html">Dashboard</a>
+          <a class="pill-link active" href="help.html">Help</a>
         </div>
         <div class="nav-icons">
           <a class="icon-button" href="profile.html" aria-label="Account">
@@ -34,8 +34,8 @@
           <a class="pill-link" href="index.html">Explore</a>
           <a class="pill-link" href="store.html">Store</a>
           <a class="pill-link" href="https://www.patreon.com/15484552/join" target="_blank" rel="noreferrer">Membership</a>
-          <a class="pill-link active" href="dashboard.html">Dashboard</a>
-          <a class="pill-link" href="help.html">Help</a>
+          <a class="pill-link" href="dashboard.html">Dashboard</a>
+          <a class="pill-link active" href="help.html">Help</a>
           <a class="pill-link" href="profile.html">Account</a>
           <a class="pill-link" href="settings.html">Settings</a>
           <a class="pill-link" href="https://www.patreon.com/15484552/join" target="_blank" rel="noreferrer">Join Patreon</a>
@@ -44,41 +44,87 @@
     </header>
 
     <section class="hero">
-      <h1>Dashboard</h1>
-      <p>Access status and download history.</p>
+      <h1>Help and Support</h1>
+      <p>Quick answers and how the store works.</p>
     </section>
 
     <section class="container">
-      <div class="dashboard-grid">
-        <div class="detail-panel">
-          <h3>Account access</h3>
-          <p class="note">Access sync from Patreon is coming soon.</p>
-          <p class="note">Current tier: <strong data-access-level>Free</strong></p>
-          <div class="hero-actions" style="margin-top:16px;">
-            <a class="btn" href="https://www.patreon.com/15484552/join" target="_blank" rel="noreferrer">Join Patreon</a>
-            <a class="btn secondary" href="https://www.patreon.com/cw/LostSignalStore" target="_blank" rel="noreferrer">View Patreon Page</a>
-          </div>
-        </div>
-
-        <div class="detail-panel">
-          <h3>Download history</h3>
-          <div class="list" data-downloads></div>
-          <div style="margin-top:16px;">
-            <button class="btn ghost" data-clear-downloads type="button">Clear history</button>
-          </div>
+      <div class="detail-panel" style="margin-bottom: 26px;">
+        <h3>How it works</h3>
+        <ul class="kv">
+          <li>Join Patreon to unlock Lite, Creator, Studio, and Unlimited tiers.</li>
+          <li>Browse and download assets instantly once unlocked.</li>
+          <li>Access level updates automatically on your dashboard.</li>
+        </ul>
+        <div class="hero-actions" style="margin-top:16px;">
+          <a class="btn" href="https://www.patreon.com/15484552/join" target="_blank" rel="noreferrer">Join Patreon</a>
+          <a class="btn secondary" href="https://www.patreon.com/cw/LostSignalStore" target="_blank" rel="noreferrer">View Patreon Page</a>
         </div>
       </div>
 
-      <div class="section">
-        <h2 class="section-title">Locked recommendations</h2>
-        <div class="grid" data-locked-grid></div>
+      <h2 class="section-title">FAQs</h2>
+      <div class="faq">
+        <div class="faq-item">
+          <button class="faq-question" type="button">
+            How do downloads work?
+            <span>+</span>
+          </button>
+          <div class="faq-answer">
+            Downloads unlock instantly after your Patreon membership is active.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" type="button">
+            What is included in each tier?
+            <span>+</span>
+          </button>
+          <div class="faq-answer">
+            Free gets weekly starter packs. Lite unlocks essentials. Creator unlocks core assets. Studio expands the library. Unlimited gets everything.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" type="button">
+            Can I cancel anytime?
+            <span>+</span>
+          </button>
+          <div class="faq-answer">
+            Yes. Patreon memberships can be canceled any time.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" type="button">
+            Do I keep assets if I cancel?
+            <span>+</span>
+          </button>
+          <div class="faq-answer">
+            You keep downloaded assets, but access to new drops stops.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" type="button">
+            How do I upgrade tiers?
+            <span>+</span>
+          </button>
+          <div class="faq-answer">
+            Use the Join Patreon button and select the tier you want on Patreon.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" type="button">
+            Where can I get support?
+            <span>+</span>
+          </button>
+          <div class="faq-answer">
+            Message on Patreon or reach out through the official store page.
+          </div>
+        </div>
       </div>
     </section>
 
     <footer class="footer">
       <div class="footer-links">
         <a href="https://www.patreon.com/15484552/join" target="_blank" rel="noreferrer">Membership</a>
-        <a href="help.html">Support</a>
+        <a href="store.html">Store</a>
         <a href="https://www.patreon.com/cw/LostSignalStore" target="_blank" rel="noreferrer">Patreon Page</a>
       </div>
       <div>© Lost Signal</div>
